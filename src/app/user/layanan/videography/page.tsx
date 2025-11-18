@@ -14,7 +14,7 @@ export default function PhotographyPage() {
             Merekam setiap moment menjadi cerita hidup. Dari dokumentasi acara hingga video promosi, kami hadirkan karya visual yang penuh dengan makna.
           </p>
           <a
-            href="https://wa.me/62812345678"
+            href="#"
             target="_blank"
             rel="noopener noreferrer"
             className="bg-green-600 hover:bg-green-700 transition py-3 px-8 rounded-lg text-lg font-semibold inline-block"
@@ -149,60 +149,6 @@ export default function PhotographyPage() {
           Portfolio lain
         </a>
       </section>
-
-      {/* SECTION 5: Footer singkat (tanpa navbar/footer utama) */}
-      <div className="bg-neutral-900 px-8 md:px-24 py-10 grid grid-cols-1 md:grid-cols-3 gap-10 text-gray-300 font-sans">
-        <div>
-          <img src="/images/logo-digiars.png" alt="DigiArs" className="h-10 mb-4" />
-          <p className="text-sm">
-            Production House terbaik di Batam, siap membantu berbagai brand owner
-            meningkatkan dan mengembangkan bisnis di media sosial. Kami memiliki
-            layanan unggulan serta tim yang profesional dan berpengalaman di dunia
-            Creative Digital.
-          </p>
-        </div>
-
-        <div>
-          <h3 className="text-white font-semibold mb-3 font-elegante text-xl">Layanan</h3>
-          <ul className="space-y-1 text-sm">
-            <li>Fotografi</li>
-            <li>Videografi</li>
-            <li>Animasi</li>
-            <li>Broadcasting</li>
-            <li>Game</li>
-            <li>Design</li>
-          </ul>
-        </div>
-
-        <div>
-          <h3 className="text-white font-semibold mb-3 font-elegante text-xl">Hubungi Kami</h3>
-          <p className="text-sm mb-3">
-            Informasi lanjut mengenai jasa, sewa barang, dan paket promo hubungi kami melalui:
-          </p>
-          <div className="flex flex-col gap-2">
-            <a
-              href="https://wa.me/62812345678"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-green-500"
-            >
-              <FaWhatsapp /> +62 812 3456 78
-            </a>
-            <a
-              href="https://instagram.com/digiars"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-pink-400"
-            >
-              <FaInstagram /> Digiars
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <div className="text-center text-xs text-gray-500 py-4 border-t border-neutral-800 font-sans">
-        © 2025 DigiArs. All rights reserved.
-      </div>
     </div>
   );
 }
