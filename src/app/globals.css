@@ -37,3 +37,17 @@ body {
 .font-elegante {
   font-family: "Elegante Classica", serif;
 }
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* untuk meghilangkan semua bar yang ada   */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; 
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none; 
+  scrollbar-width: none;
+}

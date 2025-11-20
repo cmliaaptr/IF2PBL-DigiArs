@@ -1,14 +1,17 @@
-"use client";
-import Image from "next/image";
-import { useEffect } from "react";
-import "flowbite";
+import HeroLP from "./components/HeroLP"; 
+import AboutLP from "./components/AboutLP";
+import LayananLP from "./components/LayananLP";
+import WhyLP from "./components/WhyLP";
+import PortfolioLP from "./components/PortfolioLP";
 
-export default function Home() {
-  useEffect(() => {
-    import("flowbite");
-  }, []);
-
+export default function Page() {
   return (
-    <p>Hello world!</p>
+    <main className="bg-black text-white">
+      <HeroLP />
+      <AboutLP />
+      <LayananLP />
+      <WhyLP />
+      <PortfolioLP />
+    </main>
   );
 }
