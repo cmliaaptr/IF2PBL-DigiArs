@@ -12,7 +12,7 @@ export default function HeroW() {
       }}
     >
       {/* Overlay gelap */}
-      <div className="absolute inset-0 bg-black/60"></div>
+      <div className="absolute inset-0 bg-black/15"></div>
 
       {/* Konten teks */}
       <div className="relative z-10 max-w-2xl">

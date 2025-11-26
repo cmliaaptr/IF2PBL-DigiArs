@@ -2,14 +2,14 @@ import HeroL from "./components/HeroL";
 import CardL from "./components/CardL";
 
 const services = [
-  { id: 1, title: "Videography", desc: "Abadikan momen bersama DigiArs", icon: "/images/icon-video.png", href: "/layanan/videography" },
-  { id: 2, title: "Fotography", desc: "Foto yang menarik hasil yang lebih baik", icon: "/images/icon-camera.png", href: "/layanan/fotography" },
-  { id: 3, title: "Animasi", desc: "Hasilkan karakter animasi yang bagus", icon: "/images/icon-animation.png", href: "/layanan/animasi" },
-  { id: 4, title: "Broadcast", desc: "Buat broadcast terbaikmu dengan kami", icon: "/images/icon-broadcast.png", href: "/layanan/broadcast" },
-  { id: 5, title: "Game", desc: "Maksimalkan gamemu bersama DigiArs", icon: "/images/icon-game.png", href: "/layanan/game" },
-  { id: 6, title: "Design", desc: "Rancang designmu bersama kami", icon: "/images/icon-design.png", href: "/layanan/design" },
-  { id: 7, title: "Sewa Barang", desc: "Menyediakan barang multimedia", icon: "/images/icon-tools.png", href: "/layanan/sewa" },
-  { id: 8, title: "Sound Produksi", desc: "Sound produksi terbaik", icon: "/images/icon-sound.png", href: "/layanan/sound" },
+  { id: 1, title: "Videography", desc: "Abadikan momen bersama DigiArs", icon: "/images/videography.png", href: "/detailvideography" },
+  { id: 2, title: "Fotography", desc: "Foto yang menarik hasil yang lebih baik", icon: "/images/fotographer.png", href: "/detailfotography" },
+  { id: 3, title: "Animasi", desc: "Hasilkan karakter animasi yang bagus", icon: "/images/animasi.png", href: "/delayanimasi" },
+  { id: 4, title: "Broadcast", desc: "Buat broadcast terbaikmu dengan kami", icon: "/images/broadcasting.png", href: "/delaybroadcasting" },
+  { id: 5, title: "Game", desc: "Maksimalkan gamemu bersama DigiArs", icon: "/images/game.png", href: "/detailgame" },
+  { id: 6, title: "Design", desc: "Rancang designmu bersama kami", icon: "/images/design.png", href: "/delaydesign" },
+  { id: 7, title: "Sewa Barang", desc: "Menyediakan barang multimedia", icon: "/images/sewabarang.png", href: "/detailsewa" },
+  { id: 8, title: "Sound Produksi", desc: "Sound produksi terbaik", icon: "/images/sound.png", href: "/detailsound" },
 ];
 
 export default function LayananPage() {

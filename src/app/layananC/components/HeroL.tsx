@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 export default function HeroL() {
   return (
@@ -21,9 +22,11 @@ export default function HeroL() {
           Kami menyediakan layanan penyewaan alat multimedia, videografi, fotografi
           untuk berbagai kebutuhan acara anda.
         </p>
+        <Link href="/contact">
         <button className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-full font-medium transition">
           Hubungi Kami
         </button>
+        </Link>
       </div>
     </section>
   );
