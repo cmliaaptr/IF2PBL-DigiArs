@@ -3,8 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Montserrat } from "next/font/google"
 import "./globals.css";
 import Script from "next/script";
-import Navbar from "./components/global/Navbar";
-import Footer from "./components/global/Footer";
 
 
 const montserrat = Montserrat({
@@ -35,10 +33,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <Navbar />
         <main>{children}</main>
         <Script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js" />
-        <Footer />
       </body>
     </html>
   );
