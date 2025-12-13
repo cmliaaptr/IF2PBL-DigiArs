@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ImageModalW from "./ImageModalW";
 
 interface PortfolioItem {
@@ -7,40 +7,90 @@ interface PortfolioItem {
   src: string; // thumbnail
   category: "Foto" | "Video" | "Animasi";
   videoUrl?: string; // optional untuk video / animasi
+  judul: string;
+  deskripsi: string;
 }
 
-const portfolioItems: PortfolioItem[] = [
-  { id: 1, src: "/works/foto1.jpg", category: "Foto" },
-  { id: 2, src: "/works/foto2.jpg", category: "Foto" },
-  {
-    id: 3,
-    src: "/works/video1.jpg",
-    category: "Video",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-  },
-  {
-    id: 4,
-    src: "/works/video2.jpg",
-    category: "Video",
-    videoUrl: "https://www.youtube.com/embed/Zi_XLOBDo_Y",
-  },
-  {
-    id: 5,
-    src: "/works/animasi1.jpg",
-    category: "Animasi",
-    videoUrl: "https://www.youtube.com/embed/kXYiU_JCYtU",
-  },
-  { id: 6, src: "/works/animasi2.jpg", category: "Animasi" },
-  { id: 7, src: "/works/foto3.jpg", category: "Foto" },
-  { id: 8, src: "/works/video3.jpg", category: "Video", videoUrl: "/works/sample.mp4" },
-  { id: 9, src: "/works/animasi3.jpg", category: "Animasi" },
-];
+const API_BASE = "http://192.168.1.13:8001/api/works";
 
 export default function PortfolioCardW() {
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [selectedMedia, setSelectedMedia] = useState<{ type: "image" | "video"; src: string } | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<{
+    type: "image" | "video";
+    src: string;
+  } | null>(null);
 
-  const categories = ["All", "Foto", "Video", "Animasi"];
+  useEffect(() => {
+    const fetchWorks = async () => {
+      try {
+        const res = await fetch(API_BASE, { cache: "no-store" });
+        const data = await res.json();
+
+        const getYoutubeId = (url: string) => {
+          try {
+            const u = new URL(url);
+            if (u.hostname.includes("youtu.be")) return u.pathname.slice(1);
+            return u.searchParams.get("v") || "";
+          } catch {
+            return "";
+          }
+        };
+
+        const getYoutubeThumb = (url?: string) => {
+          if (!url) return "";
+          const id = getYoutubeId(url);
+          return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : "";
+        };
+
+        const mapped: PortfolioItem[] = (Array.isArray(data) ? data : []).map(
+          (w: any) => {
+            const videoUrl =
+              w.link_video && w.link_video.trim() !== ""
+                ? w.link_video
+                : undefined;
+
+            const thumbFromYoutube = videoUrl ? getYoutubeThumb(videoUrl) : "";
+
+            const dbKategori = (w.kategori || "").toString().trim();
+            const kategori =
+              dbKategori === "Foto" ||
+              dbKategori === "Video" ||
+              dbKategori === "Animasi"
+                ? (dbKategori as "Foto" | "Video" | "Animasi")
+                : videoUrl
+                ? "Video"
+                : "Foto";
+
+            return {
+              id: w.id,
+              category: kategori,
+              // ✅ kalau ada foto pakai foto, kalau tidak ada dan ada youtube pakai thumbnail youtube
+              src: w.foto
+                ? `/works/${w.foto}`
+                : thumbFromYoutube || "/works/default.jpg",
+              videoUrl,
+              judul: w.judul,
+              deskripsi: w.deskripsi,
+            };
+          }
+        );
+
+        setPortfolioItems(mapped);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    fetchWorks();
+  }, []);
+
+  const categories: Array<"All" | "Foto" | "Video" | "Animasi"> = [
+    "All",
+    "Foto",
+    "Video",
+    "Animasi",
+  ];
 
   const filteredItems =
     selectedCategory === "All"
@@ -83,13 +133,26 @@ export default function PortfolioCardW() {
               alt={item.category}
               className="w-full h-64 object-cover rounded-lg transform group-hover:scale-105 transition duration-300"
             />
+
+            {/* JUDUL & DESKRIPSI */}
+            <div className="p-3">
+              <h3 className="text-white font-semibold text-sm mb-1">
+                {item.judul}
+              </h3>
+              <p className="text-gray-400 text-xs line-clamp-2">
+                {item.deskripsi}
+              </p>
+            </div>
           </div>
         ))}
       </div>
 
       {/* Modal */}
       {selectedMedia && (
-        <ImageModalW media={selectedMedia} onClose={() => setSelectedMedia(null)} />
+        <ImageModalW
+          media={selectedMedia}
+          onClose={() => setSelectedMedia(null)}
+        />
       )}
     </section>
   );

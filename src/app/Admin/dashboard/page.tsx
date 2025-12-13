@@ -1,69 +1,142 @@
 "use client";
 
-import { useState, ChangeEvent, FormEvent } from "react";
+import { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import LayoutWithSidebar from "./LayoutWithSidebar"; // ✅ Gunakan sidebar yang sama
 import { LogOut } from "lucide-react"; // Logout icon tetap sama
 
 interface WorkItem {
   id: number;
-  photo: string;
-  title: string;
-  desc: string;
+  kategori: "Foto" | "Video" | "Animasi";
+  foto: string;
+  link_video?: string;
+  judul: string;
+  deskripsi: string;
 }
 
+const API_BASE = "http://192.168.1.13:8001/api/works";
+
 export default function DashboardPage() {
-  const [works, setWorks] = useState<WorkItem[]>([
-    { id: 1, photo: "Putri.jpg", title: "Videography", desc: "Ini Videography." },
-    { id: 2, photo: "Louis.jpg", title: "Photography", desc: "Ini Photography." },
-    { id: 3, photo: "Dhani.jpg", title: "Sounding", desc: "Ini Sounding." },
-  ]);
+  const [works, setWorks] = useState<WorkItem[]>([]);
 
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState<WorkItem>({
     id: 0,
-    photo: "",
-    title: "",
-    desc: "",
+    kategori: "Foto",
+    foto: "",
+    link_video: "",
+    judul: "",
+    deskripsi: "",
   });
+
+  const fetchWorks = async () => {
+    try {
+      const res = await fetch(API_BASE, { cache: "no-store" });
+      const data = await res.json();
+
+      // support jika backend kirim link_video atau link_video
+      const mapped: WorkItem[] = (Array.isArray(data) ? data : []).map(
+        (w: any) => ({
+          id: w.id,
+          kategori: w.kategori,
+          foto: w.foto,
+          link_video: w.link_video ?? w.link_video ?? "",
+          judul: w.judul,
+          deskripsi: w.deskripsi ?? w["deskripsi"] ?? "",
+        })
+      );
+
+      setWorks(mapped);
+    } catch (err) {
+      console.error(err);
+      alert("Gagal mengambil data dari server");
+    }
+  };
+
+  useEffect(() => {
+    fetchWorks();
+  }, []);
 
   // === OPEN / CLOSE FORM ===
   const handleOpenForm = (item?: WorkItem) => {
     if (item) setFormData(item);
-    else setFormData({ id: 0, photo: "", title: "", desc: "" });
+    else
+      setFormData({
+        id: 0,
+        kategori: "Foto",
+        foto: "",
+        link_video: "",
+        judul: "",
+        deskripsi: "",
+      });
     setShowForm(true);
   };
 
   const handleCloseForm = () => setShowForm(false);
 
   // === SUBMIT ===
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (formData.id) {
-      setWorks((prev) =>
-        prev.map((w) => (w.id === formData.id ? formData : w))
+
+    try {
+      const isEdit = !!formData.id;
+
+      const payload = {
+        kategori: formData.kategori,
+        foto: formData.foto,
+        link_video: formData.link_video || "",
+        judul: formData.judul,
+        deskripsi: formData.deskripsi,
+      };
+
+      const res = await fetch(
+        isEdit ? `${API_BASE}/${formData.id}` : API_BASE,
+        {
+          method: isEdit ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
       );
-    } else {
-      setWorks((prev) => [
-        ...prev,
-        { ...formData, id: prev.length ? prev[prev.length - 1].id + 1 : 1 },
-      ]);
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        alert(data.message || `Gagal simpan data (HTTP ${res.status})`);
+        console.log("ERROR SAVE:", res.status, data);
+        return;
+      }
+
+      setShowForm(false);
+      fetchWorks(); // refresh dari database
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi error saat simpan data");
     }
-    setShowForm(false);
   };
 
   // === DELETE ===
-  const handleDelete = (id: number) => {
-    if (confirm("Yakin ingin menghapus data ini?")) {
-      const filtered = works.filter((w) => w.id !== id);
-      const renumbered = filtered.map((item, i) => ({ ...item, id: i + 1 }));
-      setWorks(renumbered);
+  const handleDelete = async (id: number) => {
+    if (!confirm("Yakin ingin menghapus data ini?")) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.message || "Gagal menghapus data");
+        return;
+      }
+
+      fetchWorks(); // refresh dari database
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi error saat delete data");
     }
   };
 
   // === FILE UPLOAD ===
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setFormData({ ...formData, photo: file.name });
+    if (file) setFormData({ ...formData, foto: file.name });
   };
 
   return (
@@ -84,21 +157,52 @@ export default function DashboardPage() {
         <table className="w-full border-collapse">
           <thead className="bg-gray-100 text-gray-700">
             <tr>
-              <th className="border border-gray-300 px-4 py-2 text-sm w-16 text-center">No</th>
-              <th className="border border-gray-300 px-4 py-2 text-sm w-40 text-center">Foto/Video</th>
-              <th className="border border-gray-300 px-4 py-2 text-sm w-40 text-center">Judul</th>
-              <th className="border border-gray-300 px-4 py-2 text-sm text-center">Deskripsi</th>
-              <th className="border border-gray-300 px-4 py-2 text-sm w-44 text-center">Aksi</th>
+              <th className="border border-gray-300 px-4 py-2 text-sm w-16 text-center">
+                No
+              </th>
+              <th className="border border-gray-300 px-4 py-2 text-sm w-40 text-center">
+                Kategori
+              </th>
+              <th className="border border-gray-300 px-4 py-2 text-sm w-40 text-center">
+                Foto
+              </th>
+              <th className="border border-gray-300 px-4 py-2 text-sm w-40 text-center">
+                Link Video
+              </th>
+              <th className="border border-gray-300 px-4 py-2 text-sm w-40 text-center">
+                Judul
+              </th>
+              <th className="border border-gray-300 px-4 py-2 text-sm text-center">
+                Deskripsi
+              </th>
+              <th className="border border-gray-300 px-4 py-2 text-sm w-44 text-center">
+                Aksi
+              </th>
             </tr>
           </thead>
           <tbody>
             {works.map((item, index) => (
-              <tr key={item.id} className="bg-white hover:bg-gray-50 text-center">
-                <td className="border border-gray-300 py-3">{index + 1}</td>
-                <td className="border border-gray-300 py-3">{item.photo}</td>
-                <td className="border border-gray-300 py-3">{item.title}</td>
+              <tr
+                key={item.id}
+                className="bg-white hover:bg-gray-50 text-center"
+              >
                 <td className="border border-gray-300 py-3 text-gray-800 text-sm">
-                  {item.desc}
+                  {index + 1}
+                </td>
+                <td className="border border-gray-300 py-3 text-gray-800 text-sm">
+                  {item.kategori}
+                </td>
+                <td className="border border-gray-300 py-3 text-gray-800 text-sm">
+                  {item.foto}
+                </td>
+                <td className="border border-gray-300 py-3 text-gray-800 text-sm">
+                  {item.link_video}
+                </td>
+                <td className="border border-gray-300 py-3 text-gray-800 text-sm">
+                  {item.judul}
+                </td>
+                <td className="border border-gray-300 py-3 text-gray-800 text-sm">
+                  {item.deskripsi}
                 </td>
                 <td className="border border-gray-300 py-3">
                   <div className="flex justify-center items-center gap-2">
@@ -131,7 +235,25 @@ export default function DashboardPage() {
             </h2>
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label className="block text-sm font-medium mb-1">Foto/Video</label>
+                <label className="block text-sm font-medium">Kategori</label>
+                <select
+                  value={formData.kategori}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      kategori: e.target.value as WorkItem["kategori"],
+                    })
+                  }
+                  className="w-full border border-gray-300 rounded-md p-2 focus:ring focus:ring-blue-200"
+                >
+                  <option value="Foto">Foto</option>
+                  <option value="Video">Video</option>
+                  <option value="Animasi">Animasi</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1 ">Foto</label>
                 <div className="flex items-center gap-2">
                   <input
                     id="fileInput"
@@ -142,15 +264,30 @@ export default function DashboardPage() {
                   />
                   <label
                     htmlFor="fileInput"
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-md cursor-pointer"
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-md cursor-pointer mb-3"
                   >
                     Pilih File
                   </label>
-                  {formData.photo && (
+                  {formData.foto && (
                     <span className="text-sm text-gray-600 truncate max-w-[200px]">
-                      {formData.photo}
+                      {formData.foto}
                     </span>
                   )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium">
+                    Link Video
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://youtube.com/..."
+                    value={formData.link_video}
+                    onChange={(e) =>
+                      setFormData({ ...formData, link_video: e.target.value })
+                    }
+                    className="w-full border border-gray-300 rounded-md p-2 focus:ring focus:ring-blue-200"
+                  />
                 </div>
               </div>
 
@@ -158,8 +295,10 @@ export default function DashboardPage() {
                 <label className="block text-sm font-medium">Judul</label>
                 <input
                   type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  value={formData.judul}
+                  onChange={(e) =>
+                    setFormData({ ...formData, judul: e.target.value })
+                  }
                   className="w-full border border-gray-300 rounded-md p-2 focus:ring focus:ring-blue-200"
                 />
               </div>
@@ -167,8 +306,10 @@ export default function DashboardPage() {
               <div>
                 <label className="block text-sm font-medium">Deskripsi</label>
                 <textarea
-                  value={formData.desc}
-                  onChange={(e) => setFormData({ ...formData, desc: e.target.value })}
+                  value={formData.deskripsi}
+                  onChange={(e) =>
+                    setFormData({ ...formData, deskripsi: e.target.value })
+                  }
                   className="w-full border border-gray-300 rounded-md p-2 focus:ring focus:ring-blue-200"
                   rows={4}
                 />

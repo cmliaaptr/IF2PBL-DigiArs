@@ -17,7 +17,7 @@ export default function LoginPage() {
     // Contoh login sederhana
     if (username === "admin" && password === "12345") {
       alert("Login berhasil!");
-      router.push("/dashboard"); // arahkan ke dashboard
+      router.push("/Admin/dashboard"); // arahkan ke dashboard
     } else {
       alert("Username atau password salah!");
     }

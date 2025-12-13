@@ -45,7 +45,7 @@ export default function LayoutWithSidebar({
   // === Fungsi Logout ===
   const handleLogout = () => {
     if (confirm("Apakah anda yakin ingin keluar?")) {
-      window.location.href = "/login";
+      window.location.href = "/Admin/login";
     }
   };
 

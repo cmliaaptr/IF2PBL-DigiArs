@@ -3,6 +3,28 @@ interface ImageModalProp {
   onClose: () => void;
 }
 
+const toYoutubeEmbedUrl = (url: string) => {
+  try {
+    const u = new URL(url);
+
+    // youtu.be/VIDEO_ID
+    if (u.hostname.includes("youtu.be")) {
+      const id = u.pathname.replace("/", "");
+      return id ? `https://www.youtube.com/embed/${id}` : url;
+    }
+
+    // youtube.com/watch?v=VIDEO_ID
+    if (u.hostname.includes("youtube.com")) {
+      const id = u.searchParams.get("v");
+      return id ? `https://www.youtube.com/embed/${id}` : url;
+    }
+
+    return url;
+  } catch {
+    return url;
+  }
+};
+
 export default function ImageModalW({ media, onClose }: ImageModalProp) {
   return (
     <div
@@ -18,7 +40,7 @@ export default function ImageModalW({ media, onClose }: ImageModalProp) {
         ) : media.src.includes("youtube.com") || media.src.includes("youtu.be") ? (
           <div className="aspect-video w-full">
             <iframe
-              src={media.src}
+              src={toYoutubeEmbedUrl(media.src)}
               title="Video Player"
               className="w-full h-full rounded-lg"
               frameBorder="0"
