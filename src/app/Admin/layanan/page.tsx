@@ -94,19 +94,19 @@ export default function LayananPage() {
 
       {/* TABLE */}
       <div className="overflow-x-auto border border-gray-200 rounded-md shadow-md">
-        <table className="min-w-full border-collapse table-auto">
-          <thead className="bg-gray-100 text-gray-700">
+        <table className="min-w-full border-collapse table-fixed">
+          <thead className="bg-gray-200 text-gray-700">
             <tr>
-              <th className="border border-gray-300 px-4 py-2 text-sm text-center whitespace-nowrap">
+              <th className="w-16 border border-gray-300 px-4 py-2 text-sm text-center">
                 No
               </th>
-              <th className="border border-gray-300 px-4 py-2 text-sm text-center whitespace-nowrap">
+              <th className="w-50 border border-gray-300 px-4 py-2 text-sm text-center">
                 Foto/Video
               </th>
-              <th className="border border-gray-300 px-4 py-2 text-sm text-center whitespace-nowrap">
+              <th className="border border-gray-300 px-4 py-2 text-sm text-center">
                 Judul
               </th>
-              <th className="border border-gray-300 px-4 py-2 text-sm text-center whitespace-nowrap">
+              <th className="w-60 border border-gray-300 px-4 py-2 text-sm text-center">
                 Aksi
               </th>
             </tr>
@@ -115,18 +115,18 @@ export default function LayananPage() {
             {layanan.map((item, index) => (
               <tr
                 key={item.id}
-                className="bg-white hover:bg-gray-50 text-center align-top"
+                className="bg-white hover:bg-gray-50 text-gray-700 text-center align-middle"
               >
-                <td className="border border-gray-300 py-2 px-3 align-middle">
+                <td className="border border-gray-300 py-3 align-middle">
                   {index + 1}
                 </td>
-                <td className="border border-gray-300 py-2 px-3 align-middle break-words">
+                <td className="border border-gray-300 py-3 align-middle break-words">
                   {item.photo}
                 </td>
-                <td className="border border-gray-300 py-2 px-3 text-gray-800 text-sm text-center align-middle break-words whitespace-pre-line max-w-[250px]">
+                <td className="border border-gray-300 py-3 text-gray-800 text-sm text-center align-middle break-words whitespace-pre-line max-w-[250px]">
                 {item.title}
                 </td>
-                <td className="border border-gray-300 px-3 py-2 align-middle">
+                <td className="border border-gray-300 px-4 py-3 align-middle">
                   <div className="flex justify-center items-center gap-2">
                     <button
                       onClick={() => handleDelete(item.id)}
@@ -159,7 +159,7 @@ export default function LayananPage() {
             <form onSubmit={handleSubmit} className="space-y-3">
               {/* FOTO/VIDEO */}
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label className="block text-sm text-gray-700 font-medium mb-1">
                   Foto/Video
                 </label>
                 <div className="flex items-center gap-2">
@@ -186,14 +186,14 @@ export default function LayananPage() {
 
               {/* JUDUL */}
               <div>
-                <label className="block text-sm font-medium">Judul</label>
+                <label className="block text-sm text-gray-700 font-medium">Judul</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) =>
                     setFormData({ ...formData, title: e.target.value })
                   }
-                  className="w-full border border-gray-300 rounded-md p-2 focus:ring focus:ring-blue-200"
+                  className="w-full border border-gray-400 text-gray-400 rounded-md p-2 focus:ring focus:ring-blue-200"
                 />
               </div>
 
@@ -202,7 +202,7 @@ export default function LayananPage() {
                 <button
                   type="button"
                   onClick={handleCloseForm}
-                  className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
                 >
                   Batal
                 </button>

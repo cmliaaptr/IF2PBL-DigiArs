@@ -86,18 +86,18 @@ export default function GamePage() {
       {/* === TABLE === */}
       <div className="overflow-x-auto border border-gray-200 rounded-md shadow-md">
         <table className="min-w-full table-fixed border-collapse">
-          <thead className="bg-gray-100 text-gray-700">
+          <thead className="bg-gray-200 text-gray-700">
             <tr>
               <th className="w-16 border border-gray-300 px-4 py-2 text-sm text-center">
                 No
               </th>
-              <th className="w-40 border border-gray-300 px-4 py-2 text-sm text-center">
+              <th className="w-50 border border-gray-300 px-4 py-2 text-sm text-center">
                 Foto/Video
               </th>
               <th className="border border-gray-300 px-4 py-2 text-sm text-center">
                 Judul
               </th>
-              <th className="w-44 border border-gray-300 px-4 py-2 text-sm text-center">
+              <th className="w-60 border border-gray-300 px-4 py-2 text-sm text-center">
                 Aksi
               </th>
             </tr>
@@ -106,7 +106,7 @@ export default function GamePage() {
             {photos.map((item, index) => (
               <tr
                 key={item.id}
-                className="bg-white hover:bg-gray-50 text-center align-middle"
+                className="bg-white hover:bg-gray-50 text-gray-700 text-center align-middle"
               >
                 {/* === NO === */}
                 <td className="border border-gray-300 py-3 align-middle text-center">
@@ -157,7 +157,7 @@ export default function GamePage() {
             <form onSubmit={handleSubmit} className="space-y-3">
               {/* FOTO/VIDEO */}
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label className="block text-sm text-gray-700 font-medium mb-1">
                   Foto/Video
                 </label>
                 <div className="flex items-center gap-2">
@@ -184,14 +184,14 @@ export default function GamePage() {
 
               {/* JUDUL */}
               <div>
-                <label className="block text-sm font-medium">Judul</label>
+                <label className="block text-sm text-gray-700 font-medium">Judul</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) =>
                     setFormData({ ...formData, title: e.target.value })
                   }
-                  className="w-full border border-gray-300 rounded-md p-2 focus:ring focus:ring-blue-200"
+                  className="w-full border border-gray-400 text-gray-400 rounded-md p-2 focus:ring focus:ring-blue-200"
                 />
               </div>
 
@@ -200,7 +200,7 @@ export default function GamePage() {
                 <button
                   type="button"
                   onClick={handleCloseForm}
-                  className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
                 >
                   Batal
                 </button>

@@ -155,7 +155,7 @@ export default function DashboardPage() {
       {/* === TABLE === */}
       <div className="overflow-x-auto border border-gray-200 rounded-md shadow-md">
         <table className="w-full border-collapse">
-          <thead className="bg-gray-100 text-gray-700">
+          <thead className="bg-gray-200 text-gray-700">
             <tr>
               <th className="border border-gray-300 px-4 py-2 text-sm w-16 text-center">
                 No
@@ -166,7 +166,7 @@ export default function DashboardPage() {
               <th className="border border-gray-300 px-4 py-2 text-sm w-40 text-center">
                 Foto
               </th>
-              <th className="border border-gray-300 px-4 py-2 text-sm w-40 text-center">
+              <th className="border border-gray-300 px-4 py-2 text-sm w-60 text-center">
                 Link Video
               </th>
               <th className="border border-gray-300 px-4 py-2 text-sm w-40 text-center">
@@ -235,7 +235,7 @@ export default function DashboardPage() {
             </h2>
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label className="block text-sm font-medium">Kategori</label>
+                <label className="block text-sm text-gray-700 font-medium">Kategori</label>
                 <select
                   value={formData.kategori}
                   onChange={(e) =>
@@ -244,7 +244,7 @@ export default function DashboardPage() {
                       kategori: e.target.value as WorkItem["kategori"],
                     })
                   }
-                  className="w-full border border-gray-300 rounded-md p-2 focus:ring focus:ring-blue-200"
+                  className="w-full border border-gray-400 text-gray-400 rounded-md p-2 focus:ring focus:ring-blue-200"
                 >
                   <option value="Foto">Foto</option>
                   <option value="Video">Video</option>
@@ -253,7 +253,7 @@ export default function DashboardPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1 ">Foto</label>
+                <label className="block text-sm text-gray-700 font-medium">Foto</label>
                 <div className="flex items-center gap-2">
                   <input
                     id="fileInput"
@@ -276,7 +276,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium">
+                  <label className="block text-sm text-gray-700 font-medium">
                     Link Video
                   </label>
                   <input
@@ -286,31 +286,31 @@ export default function DashboardPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, link_video: e.target.value })
                     }
-                    className="w-full border border-gray-300 rounded-md p-2 focus:ring focus:ring-blue-200"
+                    className="w-full border border-gray-400 text-gray-400 rounded-md p-2 focus:ring focus:ring-blue-200"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium">Judul</label>
+                <label className="block text-sm text-gray-700 font-medium">Judul</label>
                 <input
                   type="text"
                   value={formData.judul}
                   onChange={(e) =>
                     setFormData({ ...formData, judul: e.target.value })
                   }
-                  className="w-full border border-gray-300 rounded-md p-2 focus:ring focus:ring-blue-200"
+                  className="w-full border border-gray-400 text-gray-400 rounded-md p-2 focus:ring focus:ring-blue-200"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium">Deskripsi</label>
+                <label className="block text-sm text-gray-700 font-medium">Deskripsi</label>
                 <textarea
                   value={formData.deskripsi}
                   onChange={(e) =>
                     setFormData({ ...formData, deskripsi: e.target.value })
                   }
-                  className="w-full border border-gray-300 rounded-md p-2 focus:ring focus:ring-blue-200"
+                  className="w-full border border-gray-400 text-gray-400 rounded-md p-2 focus:ring focus:ring-blue-200"
                   rows={4}
                 />
               </div>
@@ -319,7 +319,7 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={handleCloseForm}
-                  className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
                 >
                   Batal
                 </button>
