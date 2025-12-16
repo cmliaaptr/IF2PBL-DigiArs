@@ -1,18 +1,20 @@
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
+
+// ROOT PROJECT /storage/works
+const UPLOAD_DIR = path.resolve(process.cwd(), "storage", "works");
+
+if (!fs.existsSync(UPLOAD_DIR)) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "storage/works"),
+  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const name = `work-${Date.now()}${ext}`;
-    cb(null, name);
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `works-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
   },
 });
 
-const fileFilter = (req, file, cb) => {
-  const ok = ["image/jpeg", "image/png", "image/webp"].includes(file.mimetype);
-  cb(ok ? null : new Error("Hanya JPG/PNG/WEBP"), ok);
-};
-
-module.exports = multer({ storage, fileFilter });
+module.exports = multer({ storage });

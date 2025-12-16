@@ -6,24 +6,30 @@ import { LogOut } from "lucide-react"; // Logout icon tetap sama
 
 interface WorkItem {
   id: number;
-  kategori: "Foto" | "Video" | "Animasi";
+  kategori: "Photography" | "Videography" | "Animasi" | "Design" | "Broadcasting" | "Game" | "Sound Production" | "Sewa Barang";
   foto: string;
-  link_video?: string;
+  link_video: string;
+  audio: string;
   judul: string;
   deskripsi: string;
 }
 
-const API_BASE = "http://192.168.1.13:8001/api/works";
+const API_BASE = "http://localhost:8001/api/works";
+const FILE_BASE = "http://localhost:8001/storage/works/";
+const AUDIO_BASE = "http://localhost:8001/storage/works/";
 
 export default function DashboardPage() {
   const [works, setWorks] = useState<WorkItem[]>([]);
+  const [selectedFoto, setSelectedFoto] = useState<File | null>(null);
+  const [selectedAudio, setSelectedAudio] = useState<File | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState<WorkItem>({
     id: 0,
-    kategori: "Foto",
+    kategori: "Photography",
     foto: "",
     link_video: "",
+    audio: "",
     judul: "",
     deskripsi: "",
   });
@@ -40,6 +46,7 @@ export default function DashboardPage() {
           kategori: w.kategori,
           foto: w.foto,
           link_video: w.link_video ?? w.link_video ?? "",
+          audio: w.audio,
           judul: w.judul,
           deskripsi: w.deskripsi ?? w["deskripsi"] ?? "",
         })
@@ -54,6 +61,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchWorks();
+    setSelectedFoto(null);
+    setSelectedAudio(null);
   }, []);
 
   // === OPEN / CLOSE FORM ===
@@ -62,9 +71,10 @@ export default function DashboardPage() {
     else
       setFormData({
         id: 0,
-        kategori: "Foto",
+        kategori: "Photography",
         foto: "",
         link_video: "",
+        audio: "",
         judul: "",
         deskripsi: "",
       });
@@ -77,40 +87,36 @@ export default function DashboardPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    try {
-      const isEdit = !!formData.id;
+    const isEdit = !!formData.id;
 
-      const payload = {
-        kategori: formData.kategori,
-        foto: formData.foto,
-        link_video: formData.link_video || "",
-        judul: formData.judul,
-        deskripsi: formData.deskripsi,
-      };
+    const fd = new FormData();
+    fd.append("kategori", formData.kategori);
+    fd.append("judul", formData.judul);
+    fd.append("deskripsi", formData.deskripsi);
+    fd.append("link_video", formData.link_video || "");
 
-      const res = await fetch(
-        isEdit ? `${API_BASE}/${formData.id}` : API_BASE,
-        {
-          method: isEdit ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        alert(data.message || `Gagal simpan data (HTTP ${res.status})`);
-        console.log("ERROR SAVE:", res.status, data);
-        return;
-      }
-
-      setShowForm(false);
-      fetchWorks(); // refresh dari database
-    } catch (err) {
-      console.error(err);
-      alert("Terjadi error saat simpan data");
+    if (selectedFoto) {
+      fd.append("foto", selectedFoto); // foto file
     }
+    if (selectedAudio) {
+      fd.append("audio", selectedAudio); // audio file
+    }
+
+    const res = await fetch(isEdit ? `${API_BASE}/${formData.id}` : API_BASE, {
+      method: isEdit ? "PUT" : "POST",
+      body: fd, // ❗ TANPA headers
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.message || "Gagal simpan");
+      return;
+    }
+
+    setShowForm(false);
+    setSelectedFoto(null);
+    setSelectedAudio(null);
+    fetchWorks();
   };
 
   // === DELETE ===
@@ -134,9 +140,18 @@ export default function DashboardPage() {
   };
 
   // === FILE UPLOAD ===
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFotoChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setFormData({ ...formData, foto: file.name });
+    if (!file) return;
+    setSelectedFoto(file);
+    setFormData((prev) => ({ ...prev, foto: file.name }));
+  };
+
+  const handleAudioChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSelectedAudio(file);
+    setFormData((prev) => ({ ...prev, audio: file.name }));
   };
 
   return (
@@ -157,17 +172,20 @@ export default function DashboardPage() {
         <table className="w-full border-collapse">
           <thead className="bg-gray-200 text-gray-700">
             <tr>
-              <th className="border border-gray-300 px-4 py-2 text-sm w-16 text-center">
+              <th className="border border-gray-300 px-4 py-2 text-sm w-12 text-center">
                 No
               </th>
-              <th className="border border-gray-300 px-4 py-2 text-sm w-40 text-center">
+              <th className="border border-gray-300 px-4 py-2 text-sm w-28 text-center">
                 Kategori
               </th>
-              <th className="border border-gray-300 px-4 py-2 text-sm w-40 text-center">
+              <th className="border border-gray-300 px-4 py-2 text-sm w-35 text-center">
                 Foto
               </th>
               <th className="border border-gray-300 px-4 py-2 text-sm w-60 text-center">
                 Link Video
+              </th>
+              <th className="border border-gray-300 px-4 py-2 text-sm w-40 text-center">
+                Audio
               </th>
               <th className="border border-gray-300 px-4 py-2 text-sm w-40 text-center">
                 Judul
@@ -175,7 +193,7 @@ export default function DashboardPage() {
               <th className="border border-gray-300 px-4 py-2 text-sm text-center">
                 Deskripsi
               </th>
-              <th className="border border-gray-300 px-4 py-2 text-sm w-44 text-center">
+              <th className="border border-gray-300 px-4 py-2 text-sm w-35 text-center">
                 Aksi
               </th>
             </tr>
@@ -193,10 +211,30 @@ export default function DashboardPage() {
                   {item.kategori}
                 </td>
                 <td className="border border-gray-300 py-3 text-gray-800 text-sm">
-                  {item.foto}
+                  {item.foto ? (
+                    <img
+                      src={`${FILE_BASE}${item.foto}`}
+                      alt={item.judul}
+                      className="mx-auto h-16 w-24 object-cover rounded"
+                    />
+                  ) : (
+                    "-"
+                  )}
                 </td>
                 <td className="border border-gray-300 py-3 text-gray-800 text-sm">
-                  {item.link_video}
+                  {item.link_video || "-" }
+                </td>
+                <td className="border border-gray-300 py-3 text-gray-800 text-sm">
+                  {item.audio ? (
+                    <audio controls className="mx-auto w-56">
+                      <source
+                        src={`${AUDIO_BASE}${item.audio}`}
+                        type="audio/mpeg"
+                      />
+                    </audio>
+                  ) : (
+                    "-"
+                  )}
                 </td>
                 <td className="border border-gray-300 py-3 text-gray-800 text-sm">
                   {item.judul}
@@ -235,7 +273,9 @@ export default function DashboardPage() {
             </h2>
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label className="block text-sm text-gray-700 font-medium">Kategori</label>
+                <label className="block text-sm text-gray-700 font-medium">
+                  Kategori
+                </label>
                 <select
                   value={formData.kategori}
                   onChange={(e) =>
@@ -246,20 +286,27 @@ export default function DashboardPage() {
                   }
                   className="w-full border border-gray-400 text-gray-400 rounded-md p-2 focus:ring focus:ring-blue-200"
                 >
-                  <option value="Foto">Foto</option>
-                  <option value="Video">Video</option>
+                  <option value="Photography">Photography</option>
+                  <option value="Videography">Videography</option>
                   <option value="Animasi">Animasi</option>
+                  <option value="Design">Design</option>
+                  <option value="Broadcasting">Broadcasting</option>
+                  <option value="Game">Game</option>
+                  <option value="Sound Production">Sound Production</option>
+                  <option value="Sewa Barang">Sewa Barang</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 font-medium">Foto</label>
+                <label className="block text-sm text-gray-700 font-medium">
+                  Foto
+                </label>
                 <div className="flex items-center gap-2">
                   <input
                     id="fileInput"
                     type="file"
                     accept="image/*,video/*"
-                    onChange={handleFileChange}
+                    onChange={handleFotoChange}
                     className="hidden"
                   />
                   <label
@@ -292,7 +339,37 @@ export default function DashboardPage() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 font-medium">Judul</label>
+                <label className="block text-sm text-gray-700 font-medium">
+                  Audio (MP3)
+                </label>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    id="audioInput"
+                    type="file"
+                    accept="audio/mpeg"
+                    onChange={handleAudioChange}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="audioInput"
+                    className="bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2 rounded-md cursor-pointer mb-3"
+                  >
+                    Pilih MP3
+                  </label>
+
+                  {formData.audio && (
+                    <span className="text-sm text-gray-600 truncate max-w-[200px]">
+                      {formData.audio}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-700 font-medium">
+                  Judul
+                </label>
                 <input
                   type="text"
                   value={formData.judul}
@@ -304,7 +381,9 @@ export default function DashboardPage() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 font-medium">Deskripsi</label>
+                <label className="block text-sm text-gray-700 font-medium">
+                  Deskripsi
+                </label>
                 <textarea
                   value={formData.deskripsi}
                   onChange={(e) =>

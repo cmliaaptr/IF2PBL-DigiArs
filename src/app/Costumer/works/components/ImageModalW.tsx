@@ -1,5 +1,5 @@
 interface ImageModalProp {
-  media: { type: "image" | "video"; src: string };
+  media: { type: "image" | "video" | "audio"; src: string };
   onClose: () => void;
 }
 
@@ -36,7 +36,18 @@ export default function ImageModalW({ media, onClose }: ImageModalProp) {
         onClick={(e) => e.stopPropagation()}
       >
         {media.type === "image" ? (
-          <img src={media.src} alt="Portfolio" className="w-full rounded-lg" />
+          <img
+            src={media.src}
+            alt="Portfolio"
+            className="mx-auto rounded-lg object-contain max-h-[80vh] w-auto max-w-full"
+          />
+        ) : media.type === "audio" ? (
+          <div className="bg-black rounded-lg p-6 w-full max-w-xl mx-auto">
+            <audio controls autoPlay className="w-full">
+              <source src={media.src} type="audio/mpeg" />
+              Browser kamu tidak mendukung audio.
+            </audio>
+          </div>
         ) : media.src.includes("youtube.com") || media.src.includes("youtu.be") ? (
           <div className="aspect-video w-full">
             <iframe
@@ -49,12 +60,7 @@ export default function ImageModalW({ media, onClose }: ImageModalProp) {
             ></iframe>
           </div>
         ) : (
-          <video
-            src={media.src}
-            controls
-            autoPlay
-            className="w-full rounded-lg"
-          />
+          <video src={media.src} controls autoPlay className="w-full rounded-lg" />
         )}
 
         <button
