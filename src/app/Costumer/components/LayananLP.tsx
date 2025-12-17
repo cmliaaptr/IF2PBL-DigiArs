@@ -4,62 +4,129 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
+type LayananApi = {
+  id: number;
+  foto?: string;
+  link_video?: string;
+  kategori?: string;
+  judul?: string;
+  deskripsi?: string;
+};
+
 type LayananItem = {
   title: string;
   desc: string;
-  img: string;
+  img: string;        // thumbnail (foto atau youtube thumb)
+  videoUrl?: string;  // link video asli (youtube/url)
 };
 
-const layanan: LayananItem[] = [
-  {
-    title: "Fotografi",
-    desc: "",
-    img: "/foto1.jpg",
-  },
-  {
-    title: "Videografi",
-    desc: "",
-    img: "/foto2.jpg",
-  },
-  {
-    title: "Animasi",
-    desc: "",
-    img: "/foto3.jpg",
-  },
-  {
-    title: "Broadcasting",
-    desc: "",
-    img: "/foto4.jpg",
-  },
-  {
-    title: "Desain Grafis",
-    desc: "",
-    img: "/foto5.jpg",
-  },
-  {
-    title: "Game",
-    desc: "",
-    img: "/foto6.jpg",
-  },
-  {
-    title: "sewa barang multimedia",
-    desc: "",
-    img: "/foto5.jpg",
-  },
-  {
-    title: "sound production",
-    desc: "",
-    img: "/foto5.jpg",
-  },
-];
+const BACKEND =
+  process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "") ||
+  "http://localhost:8001";
+
+const API_BASE = `${BACKEND}/api/layanan`;
+const FILE_BASE = `${BACKEND}/storage/layanan/`;
+
+function pickArray(payload: any): any[] {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.layanan)) return payload.layanan;
+  if (Array.isArray(payload?.rows)) return payload.rows;
+  return [];
+}
+
+function resolveStorageUrl(file?: string): string {
+  const f = (file || "").trim();
+  if (!f) return "";
+  if (/^https?:\/\//i.test(f)) return f;
+  if (f.startsWith("/storage/layanan/")) return `${BACKEND}${f}`;
+  if (f.startsWith("storage/layanan/")) return `${BACKEND}/${f}`;
+  return `${FILE_BASE}${f}`;
+}
+
+function getYoutubeId(url: string) {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtu.be")) return u.pathname.slice(1);
+    if (u.hostname.includes("youtube.com")) return u.searchParams.get("v") || "";
+    return "";
+  } catch {
+    return "";
+  }
+}
+
+function getYoutubeThumb(url?: string) {
+  if (!url) return "";
+  const id = getYoutubeId(url);
+  return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : "";
+}
+
+function toYoutubeEmbedUrl(url: string) {
+  try {
+    const u = new URL(url);
+
+    if (u.hostname.includes("youtu.be")) {
+      const id = u.pathname.replace("/", "");
+      return id ? `https://www.youtube.com/embed/${id}` : url;
+    }
+
+    if (u.hostname.includes("youtube.com")) {
+      const id = u.searchParams.get("v");
+      return id ? `https://www.youtube.com/embed/${id}` : url;
+    }
+
+    return url;
+  } catch {
+    return url;
+  }
+}
 
 export default function LayananLP() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const intervalRef = useRef<number | null>(null);
   const isPausedRef = useRef(false);
 
+  const [layanan, setLayanan] = useState<LayananItem[]>([]);
   const [selected, setSelected] = useState<LayananItem | null>(null);
 
+  // Fetch layanan
+  useEffect(() => {
+    const fetchLayanan = async () => {
+      try {
+        const res = await fetch(API_BASE, { cache: "no-store" });
+        const payload = await res.json();
+        const arr = pickArray(payload) as LayananApi[];
+
+        const mapped: LayananItem[] = arr
+          .map((x) => {
+            const videoUrl =
+              x.link_video && String(x.link_video).trim() !== ""
+                ? String(x.link_video).trim()
+                : undefined;
+
+            const fotoUrl = resolveStorageUrl(x.foto);
+            const thumb = videoUrl ? getYoutubeThumb(videoUrl) : "";
+            const img = fotoUrl || thumb || "/works/default.jpg";
+
+            return {
+              title: x.judul || x.kategori || `Layanan ${x.id}`,
+              desc: x.deskripsi || "",
+              img,
+              videoUrl,
+            };
+          })
+          .filter((x) => !!x.img);
+
+        setLayanan(mapped);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    fetchLayanan();
+  }, []);
+
+  // Auto scroll (template kamu)
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
@@ -76,7 +143,7 @@ export default function LayananLP() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, []);
+  }, [layanan.length]);
 
   return (
     <section id="layanan" className="py-20 bg-[#141414] text-white">
@@ -103,24 +170,53 @@ export default function LayananLP() {
             whileTap={{ scale: 1.05 }}
             whileHover={{ scale: 1.03 }}
           >
+            {/* Ukuran gambar sesuai template layanan */}
             <img
               src={item.img}
               alt={item.title}
-              className="w-30 h-50 md:h-52 object-cover brightness-90 hover:brightness-100 transition"
+              className="w-full h-48 md:h-52 object-cover brightness-90 hover:brightness-100 transition"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = "/works/default.jpg";
+              }}
             />
+
+            {/* Depan: hanya judul */}
             <div className="p-5 text-left">
-              <h3 className="text-xl font-semibold mb-2 text-yellow-400">
+              <h3 className="text-xl font-semibold text-yellow-400">
                 {item.title}
               </h3>
-              <p className="text-sm text-gray-400 leading-relaxed line-clamp-2">
-                {item.desc}
-              </p>
+            </div>
+          </motion.div>
+        ))}
+
+        {/* duplicate for smoother infinite loop (optional) */}
+        {layanan.map((item, idx) => (
+          <motion.div
+            key={`dup-${idx}`}
+            onClick={() => setSelected(item)}
+            className="min-w-[100px] md:min-w-[280px] bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-lg flex-shrink-0 cursor-pointer hover:shadow-yellow-500/20 transition-all"
+            whileTap={{ scale: 1.05 }}
+            whileHover={{ scale: 1.03 }}
+            aria-hidden
+          >
+            <img
+              src={item.img}
+              alt={item.title}
+              className="w-full h-48 md:h-52 object-cover brightness-90 hover:brightness-100 transition"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = "/works/default.jpg";
+              }}
+            />
+            <div className="p-5 text-left">
+              <h3 className="text-xl font-semibold text-yellow-400">
+                {item.title}
+              </h3>
             </div>
           </motion.div>
         ))}
       </div>
 
-      {/* Popup Modal */}
+      {/* Popup Modal: ukuran media harus SAMA (w-full h-48) */}
       <AnimatePresence>
         {selected && (
           <motion.div
@@ -144,15 +240,47 @@ export default function LayananLP() {
                 <X size={24} />
               </button>
 
-              <img
-                src={selected.img}
-                alt={selected.title}
-                className="rounded-lg mb-4 w-full h-48 object-cover"
-              />
+              {/* MEDIA WRAPPER: SAMA utk image/video */}
+              <div className="rounded-lg mb-4 w-full h-48 overflow-hidden">
+                {selected.videoUrl &&
+                (selected.videoUrl.includes("youtube.com") ||
+                  selected.videoUrl.includes("youtu.be")) ? (
+                  <iframe
+                    src={toYoutubeEmbedUrl(selected.videoUrl)}
+                    title="Video Player"
+                    className="w-full h-full"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : selected.videoUrl ? (
+                  <video
+                    src={selected.videoUrl}
+                    controls
+                    autoPlay
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <img
+                    src={selected.img}
+                    alt={selected.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src =
+                        "/works/default.jpg";
+                    }}
+                  />
+                )}
+              </div>
+
               <h3 className="text-2xl font-bold text-yellow-400 mb-3">
                 {selected.title}
               </h3>
-              <p className="text-gray-300">{selected.desc}</p>
+
+              {/* Deskripsi hanya di popup */}
+              <p className="text-gray-300">
+                {selected.desc ? selected.desc : "Deskripsi belum tersedia."}
+              </p>
             </motion.div>
           </motion.div>
         )}

@@ -1,137 +1,144 @@
 "use client";
 
-import { useEffect, useMemo, useState, ChangeEvent, FormEvent } from "react";
+import { useEffect, useState, ChangeEvent, FormEvent } from "react";
 import LayoutWithSidebar from "../dashboard/LayoutWithSidebar";
 import { useParams } from "next/navigation";
 
 interface LayananItem {
   id: number;
-  kategori: string;
+  kategori: "Photography" | "Videography" | "Animasi" | "Design" | "Broadcasting" | "Game" | "Sound Production" | "Sewa Barang";
   foto: string;
   link_video: string;
   judul: string;
+  deskripsi?: string;
 }
 
 const API_BASE = "http://localhost:8001/api/layanan";
-const FILE_BASE = "http://192.168.1.13:8001/storage/layanan/";
+const FILE_BASE = "http://localhost:8001/storage/layanan/";
 
-const KATEGORI_MAP: Record<string, string> = {
-  photography: "Photography",
-  videography: "Videography",
-  design: "Design",
-  animasi: "Animasi",
-  game: "Game",
-  broadcasting: "Broadcasting",
-  soundproduction: "Sound Production",
-  sewabarang: "Sewa Barang",
-};
-  
-export default function LayananPage() {
-  // === Kategori dari URL Param ===
-    const params = useParams<{ kategori?: string }>();
+export default function DashboardPage() {
+  const [layanan, setLayanan] = useState<LayananItem[]>([]);
+  const [selectedFoto, setSelectedFoto] = useState<File | null>(null);
 
-    const KATEGORI = useMemo(() => {
-    const slug = (params?.kategori || "").toString().toLowerCase();
-    return KATEGORI_MAP[slug] || "";
-  }, [params?.kategori]);
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState<LayananItem>({
+    id: 0,
+    kategori: "Photography",
+    foto: "",
+    link_video: "",
+    judul: "",
+    deskripsi: "",
+  });
 
-    const [layanan, setLayanan] = useState<LayananItem[]>([]);
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  
-    const [showForm, setShowForm] = useState(false);
-    const [formData, setFormData] = useState<LayananItem>({
-      id: 0,
-      kategori: KATEGORI,
-      foto: "",
-      link_video: "",
-      judul: "",
-    });
+  const fetchLayanan = async () => {
+    try {
+      const res = await fetch(API_BASE, { cache: "no-store" });
+      const data = await res.json();
 
-  // === Fetch Data from API ===
-    const fetchLayanan = async () => {
-    const res = await fetch(`${API_BASE}?kategori=${encodeURIComponent(KATEGORI)}`, {
-      cache: "no-store",
-    });
-    const data = await res.json();
-    setLayanan(Array.isArray(data) ? data : []);
+      // support jika backend kirim link_video atau link_video
+      const mapped: LayananItem[] = (Array.isArray(data) ? data : []).map(
+        (w: any) => ({
+          id: w.id,
+          kategori: w.kategori,
+          foto: w.foto,
+          link_video: w.link_video ?? w.link_video ?? "",
+          judul: w.judul,
+          deskripsi: w.deskripsi ?? w["deskripsi"] ?? "",
+        })
+      );
+
+      setLayanan(mapped);
+    } catch (err) {
+      console.error(err);
+      alert("Gagal mengambil data dari server");
+    }
   };
 
   useEffect(() => {
-    // kategori berubah -> refresh & reset form
     fetchLayanan();
-    setShowForm(false);
-    setSelectedFile(null);
-    setFormData({ id: 0, kategori: KATEGORI, foto: "", link_video: "", judul: "" });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [KATEGORI]);
+    setSelectedFoto(null);
+  }, []);
 
-    
-  // === Open/Close Form ===
+  // === OPEN / CLOSE FORM ===
   const handleOpenForm = (item?: LayananItem) => {
-    setSelectedFile(null);
     if (item) setFormData(item);
-    else setFormData({ id: 0, kategori: KATEGORI, foto: "", link_video:"", judul: "" });
+    else
+      setFormData({
+        id: 0,
+        kategori: "Photography",
+        foto: "",
+        link_video: "",
+        judul: "",
+        deskripsi: "",
+      });
     setShowForm(true);
   };
+
   const handleCloseForm = () => setShowForm(false);
 
-  // === Submit (Tambah / Edit) ===
+  // === SUBMIT ===
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     const isEdit = !!formData.id;
 
     const fd = new FormData();
-    fd.append("kategori", KATEGORI);
+    fd.append("kategori", formData.kategori);
     fd.append("judul", formData.judul);
+    fd.append("deskripsi", formData.deskripsi);
     fd.append("link_video", formData.link_video || "");
 
-    if (selectedFile) { fd.append("foto", selectedFile);
-    } else {
-      fd.append("foto", formData.foto || ""); // biar update tanpa ganti file tetap aman
+    if (selectedFoto) {
+      fd.append("foto", selectedFoto); // foto file
     }
 
     const res = await fetch(isEdit ? `${API_BASE}/${formData.id}` : API_BASE, {
       method: isEdit ? "PUT" : "POST",
-      body: fd,
+      body: fd, // ❗ TANPA headers
     });
 
-    const data = await res.json().catch(() => ({}));
+    const data = await res.json();
     if (!res.ok) {
-      alert(data.message || `Gagal simpan (HTTP ${res.status})`);
-      console.log("ERR:", data);
+      alert(data.message || "Gagal simpan");
       return;
     }
 
     setShowForm(false);
-    setSelectedFile(null);
+    setSelectedFoto(null);
     fetchLayanan();
   };
 
-  // === Delete + Renumber ===
+  // === DELETE ===
   const handleDelete = async (id: number) => {
     if (!confirm("Yakin ingin menghapus data ini?")) return;
 
-    const res = await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      alert(data.message || "Gagal hapus");
-      return;
+    try {
+      const res = await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.message || "Gagal menghapus data");
+        return;
+      }
+
+      fetchLayanan(); // refresh dari database
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi error saat delete data");
     }
-    fetchLayanan();
   };
 
-  // === Upload File ===
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  // === FILE UPLOAD ===
+  const handleFotoChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setSelectedFile(file); // ✅ ini yang kemarin belum ada
+    setSelectedFoto(file);
     setFormData((prev) => ({ ...prev, foto: file.name }));
   };
 
   return (
     <LayoutWithSidebar>
-      {/* HEADER */}
+      {/* === HEADER === */}
       <div className="mb-4">
         <h1 className="text-4xl font-bold text-gray-800 mb-3">Layanan</h1>
         <button
@@ -142,24 +149,30 @@ export default function LayananPage() {
         </button>
       </div>
 
-      {/* TABLE */}
+      {/* === TABLE === */}
       <div className="overflow-x-auto border border-gray-200 rounded-md shadow-md">
-        <table className="min-w-full border-collapse table-fixed">
+        <table className="w-full border-collapse">
           <thead className="bg-gray-200 text-gray-700">
             <tr>
-              <th className="w-10 border border-gray-300 px-4 py-2 text-sm text-center">
+              <th className="border border-gray-300 px-4 py-2 text-sm w-12 text-center">
                 No
               </th>
-              <th className="w-40 border border-gray-300 px-4 py-2 text-sm text-center">
+              <th className="border border-gray-300 px-4 py-2 text-sm w-28 text-center">
+                Kategori
+              </th>
+              <th className="border border-gray-300 px-4 py-2 text-sm w-35 text-center">
                 Foto
               </th>
-              <th className="w-40 border border-gray-300 px-4 py-2 text-sm text-center">
+              <th className="border border-gray-300 px-4 py-2 text-sm w-60 text-center">
                 Link Video
               </th>
-              <th className="w-40 border border-gray-300 px-4 py-2 text-sm text-center">
+              <th className="border border-gray-300 px-4 py-2 text-sm w-40 text-center">
                 Judul
               </th>
-              <th className="w-40 border border-gray-300 px-4 py-2 text-sm text-center">
+              <th className="border border-gray-300 px-4 py-2 text-sm text-center">
+                Deskripsi
+              </th>
+              <th className="border border-gray-300 px-4 py-2 text-sm w-35 text-center">
                 Aksi
               </th>
             </tr>
@@ -168,29 +181,35 @@ export default function LayananPage() {
             {layanan.map((item, index) => (
               <tr
                 key={item.id}
-                className="bg-white hover:bg-gray-50 text-gray-700 text-center align-middle"
+                className="bg-white hover:bg-gray-50 text-center"
               >
-                <td className="border border-gray-300 py-3 align-middle">
+                <td className="border border-gray-300 py-3 text-gray-800 text-sm">
                   {index + 1}
                 </td>
-                <td className="border border-gray-300 py-3 align-middle break-words">
+                <td className="border border-gray-300 py-3 text-gray-800 text-sm">
+                  {item.kategori}
+                </td>
+                <td className="border border-gray-300 py-3 text-gray-800 text-sm">
                   {item.foto ? (
                     <img
                       src={`${FILE_BASE}${item.foto}`}
-                      alt={item.judul}  
-                      className="mx-auto max-h-16 object-cover rounded"
+                      alt={item.judul}
+                      className="mx-auto h-16 w-24 object-cover rounded"
                     />
                   ) : (
                     "-"
                   )}
                 </td>
                 <td className="border border-gray-300 py-3 text-gray-800 text-sm">
-                  {item.link_video}
+                  {item.link_video || "-" }
                 </td>
-                <td className="border border-gray-300 py-3 text-gray-800 text-sm text-center align-middle break-words whitespace-pre-line max-w-[250px]">
-                {item.judul}
+                <td className="border border-gray-300 py-3 text-gray-800 text-sm">
+                  {item.judul}
                 </td>
-                <td className="border border-gray-300 px-4 py-3 align-middle">
+                <td className="border border-gray-300 py-3 text-gray-800 text-sm">
+                  {item.deskripsi}
+                </td>
+                <td className="border border-gray-300 py-3">
                   <div className="flex justify-center items-center gap-2">
                     <button
                       onClick={() => handleDelete(item.id)}
@@ -212,42 +231,65 @@ export default function LayananPage() {
         </table>
       </div>
 
-      {/* MODAL FORM */}
+      {/* === FORM MODAL === */}
       {showForm && (
         <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
           <div className="bg-white rounded-lg p-6 w-[400px] shadow-xl">
             <h2 className="text-lg font-semibold text-gray-700 mb-4">
-              {formData.id ? "Edit Layanan" : "Tambah Layanan"}
+              {formData.id ? "Edit Data" : "Tambah Data"}
             </h2>
-
             <form onSubmit={handleSubmit} className="space-y-3">
-              {/* FOTO/VIDEO */}
               <div>
-                <label className="block text-sm text-gray-700 font-medium mb-1">
+                <label className="block text-sm text-gray-700 font-medium">
+                  Kategori
+                </label>
+                <select
+                  value={formData.kategori}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      kategori: e.target.value as LayananItem["kategori"],
+                    })
+                  }
+                  className="w-full border border-gray-400 text-gray-400 rounded-md p-2 focus:ring focus:ring-blue-200"
+                >
+                  <option value="Photography">Photography</option>
+                  <option value="Videography">Videography</option>
+                  <option value="Animasi">Animasi</option>
+                  <option value="Design">Design</option>
+                  <option value="Broadcasting">Broadcasting</option>
+                  <option value="Game">Game</option>
+                  <option value="Sound Production">Sound Production</option>
+                  <option value="Sewa Barang">Sewa Barang</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-700 font-medium">
                   Foto
                 </label>
                 <div className="flex items-center gap-2">
                   <input
                     id="fileInput"
                     type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
+                    accept="image/*,video/*"
+                    onChange={handleFotoChange}
                     className="hidden"
                   />
                   <label
                     htmlFor="fileInput"
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-md cursor-pointer"
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-md cursor-pointer mb-3"
                   >
                     Pilih File
                   </label>
-                  <span className="text-sm text-gray-600 truncate max-w-[200px]">
-                    {selectedFile ? selectedFile.name : formData.foto || "-"}
-                  </span>
+                  {formData.foto && (
+                    <span className="text-sm text-gray-600 truncate max-w-[200px]">
+                      {formData.foto}
+                    </span>
+                  )}
                 </div>
-              </div>
 
-              {/* LINK VIDEO */}
-              <div>
+                <div>
                   <label className="block text-sm text-gray-700 font-medium">
                     Link Video
                   </label>
@@ -261,10 +303,12 @@ export default function LayananPage() {
                     className="w-full border border-gray-400 text-gray-400 rounded-md p-2 focus:ring focus:ring-blue-200"
                   />
                 </div>
+              </div>
 
-              {/* JUDUL */}
               <div>
-                <label className="block text-sm text-gray-700 font-medium">Judul</label>
+                <label className="block text-sm text-gray-700 font-medium">
+                  Judul
+                </label>
                 <input
                   type="text"
                   value={formData.judul}
@@ -275,7 +319,20 @@ export default function LayananPage() {
                 />
               </div>
 
-              {/* BUTTONS */}
+              <div>
+                <label className="block text-sm text-gray-700 font-medium">
+                  Deskripsi
+                </label>
+                <textarea
+                  value={formData.deskripsi}
+                  onChange={(e) =>
+                    setFormData({ ...formData, deskripsi: e.target.value })
+                  }
+                  className="w-full border border-gray-400 text-gray-400 rounded-md p-2 focus:ring focus:ring-blue-200"
+                  rows={4}
+                />
+              </div>
+
               <div className="flex justify-end gap-3 pt-3">
                 <button
                   type="button"
