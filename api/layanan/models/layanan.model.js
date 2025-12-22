@@ -1,24 +1,31 @@
 const db = require("../../db");
 
-const Works = {
-  getAll: (callback) => {
-    db.query("SELECT * FROM layanan", callback);
+const Layanan = {
+  getAll: async () => {
+    const [rows] = await db.execute("SELECT * FROM layanan");
+    return rows;
   },
 
-  getById: (id, callback) => {
-    db.query("SELECT * FROM layanan WHERE id = ?", [id], callback);
+  getById: async (id) => {
+    const [rows] = await db.execute("SELECT * FROM layanan WHERE id = ?", [id]);
+    return rows;
   },
 
-  create: (data, callback) => {
-    db.query(
+  create: async (data) => {
+    const [result] = await db.execute(
       "INSERT INTO layanan (kategori, foto, link_video, judul, deskripsi) VALUES (?, ?, ?, ?, ?)",
-      [data.kategori, data.foto, data.link_video || "", data.judul, data.deskripsi],
-      callback
+      [
+        data.kategori,
+        data.foto || "",
+        data.link_video || "",
+        data.judul || "",
+        data.deskripsi || "",
+      ]
     );
+    return result; // result.insertId
   },
 
-  // ✅ update aman: hanya set foto jika memang ada (tidak kosong)
-  update: (id, data, callback) => {
+  update: async (id, data) => {
     const fields = [];
     const values = [];
 
@@ -27,7 +34,6 @@ const Works = {
       values.push(data.kategori);
     }
 
-    // penting: jangan overwrite foto jadi "" / null
     if (data.foto !== undefined && String(data.foto).trim() !== "") {
       fields.push("foto = ?");
       values.push(String(data.foto).trim());
@@ -48,19 +54,19 @@ const Works = {
       values.push(data.deskripsi);
     }
 
-    // kalau tidak ada field yang diupdate
-    if (fields.length === 0) {
-      return callback(null, { affectedRows: 0 });
-    }
+    if (fields.length === 0) return { affectedRows: 0 };
 
     values.push(id);
     const sql = `UPDATE layanan SET ${fields.join(", ")} WHERE id = ?`;
-    db.query(sql, values, callback);
+
+    const [result] = await db.execute(sql, values);
+    return result;
   },
 
-  delete: (id, callback) => {
-    db.query("DELETE FROM layanan WHERE id = ?", [id], callback);
+  delete: async (id) => {
+    const [result] = await db.execute("DELETE FROM layanan WHERE id = ?", [id]);
+    return result;
   },
 };
 
-module.exports = Works;
+module.exports = Layanan;

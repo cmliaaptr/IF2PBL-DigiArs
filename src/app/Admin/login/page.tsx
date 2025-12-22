@@ -10,18 +10,35 @@ export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  // Fungsi submit login
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
+  const API_HOST = "http://localhost:8001";
 
-    // Contoh login sederhana
-    if (username === "admin" && password === "12345") {
-      alert("Login berhasil!");
-      router.push("/Admin/dashboard"); // arahkan ke dashboard
-    } else {
-      alert("Username atau password salah!");
+  const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  try {
+    const res = await fetch(`${API_HOST}/api/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message || "Login gagal");
+      return;
     }
-  };
+
+    // ✅ SIMPAN TOKEN
+    localStorage.setItem("token", data.token);
+
+    alert("Login berhasil!");
+    router.push("/Admin/dashboard");
+  } catch (error) {
+    alert("Server error");
+  }
+};
+
 
   return (
     <div

@@ -15,8 +15,10 @@ app.get('/', (req, res) => {
 const worksRoutes = require('./works/routes/works.routes');
 const layananRoutes = require('./layanan/routes/layanan.routes');
 const path = require("path");
+const loginRoutes = require('./login/routes/user.route');
 
 // Gunakan routes
+app.use('/api/login', loginRoutes);
 app.use('/api/works', worksRoutes);
 app.use('/api/layanan', layananRoutes);
 app.use("/storage", express.static(path.resolve(process.cwd(), "storage")));

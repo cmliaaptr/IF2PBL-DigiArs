@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, ChangeEvent, FormEvent } from "react";
+import { useState, useEffect, ChangeEvent, FormEvent, use } from "react";
+import { useRouter } from "next/navigation";
 import LayoutWithSidebar from "./LayoutWithSidebar"; // ✅ Gunakan sidebar yang sama
 import { LogOut } from "lucide-react"; // Logout icon tetap sama
 
@@ -19,7 +20,9 @@ const FILE_BASE = "http://localhost:8001/storage/works/";
 const AUDIO_BASE = "http://localhost:8001/storage/works/";
 
 export default function DashboardPage() {
-  const [works, setWorks] = useState<WorkItem[]>([]);
+  const router = useRouter();
+
+  const [works, setWorks] = useState<WorkItem[]>( []);
   const [selectedFoto, setSelectedFoto] = useState<File | null>(null);
   const [selectedAudio, setSelectedAudio] = useState<File | null>(null);
 
@@ -34,9 +37,25 @@ export default function DashboardPage() {
     deskripsi: "",
   });
 
+  const getTokenOrRedirect = () => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    router.replace("/login");
+    return null;
+  }
+  return token;
+};
+
+
   const fetchWorks = async () => {
     try {
       const res = await fetch(API_BASE, { cache: "no-store" });
+
+      if (res.status === 401 || res.status === 403) {
+      localStorage.removeItem("token");
+      router.replace("/login");
+      return;
+    }
       const data = await res.json();
 
       // support jika backend kirim link_video atau link_video
@@ -60,10 +79,19 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    fetchWorks();
-    setSelectedFoto(null);
-    setSelectedAudio(null);
-  }, []);
+  const token = localStorage.getItem("token");
+  if (!token) {
+    router.replace("/Admin/login");
+    return;
+  }
+
+  // langsung ambil works (GET public)
+  fetchWorks();
+  setSelectedFoto(null);
+  setSelectedAudio(null);
+}, [router]);
+
+
 
   // === OPEN / CLOSE FORM ===
   const handleOpenForm = (item?: WorkItem) => {
@@ -85,59 +113,85 @@ export default function DashboardPage() {
 
   // === SUBMIT ===
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const isEdit = !!formData.id;
+  const token = getTokenOrRedirect();
+  if (!token) return;
 
-    const fd = new FormData();
-    fd.append("kategori", formData.kategori);
-    fd.append("judul", formData.judul);
-    fd.append("deskripsi", formData.deskripsi);
-    fd.append("link_video", formData.link_video || "");
+  const isEdit = !!formData.id;
 
-    if (selectedFoto) {
-      fd.append("foto", selectedFoto); // foto file
-    }
-    if (selectedAudio) {
-      fd.append("audio", selectedAudio); // audio file
-    }
+  const fd = new FormData();
+  fd.append("kategori", formData.kategori);
+  fd.append("judul", formData.judul);
+  fd.append("deskripsi", formData.deskripsi);
+  fd.append("link_video", formData.link_video || "");
 
-    const res = await fetch(isEdit ? `${API_BASE}/${formData.id}` : API_BASE, {
-      method: isEdit ? "PUT" : "POST",
-      body: fd, // ❗ TANPA headers
-    });
+  if (selectedFoto) fd.append("foto", selectedFoto);
+  if (selectedAudio) fd.append("audio", selectedAudio);
 
-    const data = await res.json();
-    if (!res.ok) {
-      alert(data.message || "Gagal simpan");
-      return;
-    }
+  const res = await fetch(isEdit ? `${API_BASE}/${formData.id}` : API_BASE, {
+    method: isEdit ? "PUT" : "POST",
+    headers: {
+      Authorization: `Bearer ${token}`, // ✅ WAJIB
+    },
+    body: fd,
+  });
 
-    setShowForm(false);
-    setSelectedFoto(null);
-    setSelectedAudio(null);
-    fetchWorks();
-  };
+  const data = await res.json();
+
+  if (res.status === 401 || res.status === 403) {
+    localStorage.removeItem("token");
+    router.replace("/login");
+    return;
+  }
+
+  if (!res.ok) {
+    alert(data.message || "Gagal simpan");
+    return;
+  }
+
+  setShowForm(false);
+  setSelectedFoto(null);
+  setSelectedAudio(null);
+  fetchWorks();
+};
+
 
   // === DELETE ===
   const handleDelete = async (id: number) => {
-    if (!confirm("Yakin ingin menghapus data ini?")) return;
+  if (!confirm("Yakin ingin menghapus data ini?")) return;
 
-    try {
-      const res = await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
-      const data = await res.json();
+  const token = getTokenOrRedirect();
+  if (!token) return;
 
-      if (!res.ok) {
-        alert(data.message || "Gagal menghapus data");
-        return;
-      }
+  try {
+    const res = await fetch(`${API_BASE}/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`, // ✅ WAJIB
+      },
+    });
 
-      fetchWorks(); // refresh dari database
-    } catch (err) {
-      console.error(err);
-      alert("Terjadi error saat delete data");
+    const data = await res.json();
+
+    if (res.status === 401 || res.status === 403) {
+      localStorage.removeItem("token");
+      router.replace("/login");
+      return;
     }
-  };
+
+    if (!res.ok) {
+      alert(data.message || "Gagal menghapus data");
+      return;
+    }
+
+    fetchWorks();
+  } catch (err) {
+    console.error(err);
+    alert("Terjadi error saat delete data");
+  }
+};
+
 
   // === FILE UPLOAD ===
   const handleFotoChange = (e: ChangeEvent<HTMLInputElement>) => {
