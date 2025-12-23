@@ -2,7 +2,7 @@ export default function IconSection() {
   const items = [
     { icon: "/lampu.png", label: "Creativity" },
     { icon: "/roket.png", label: "Innovation" },
-    { icon: "/hand.png", label: "Collaboration" },
+    { icon: "/handshake.png", label: "Collaboration" },
   ];
 
   return (

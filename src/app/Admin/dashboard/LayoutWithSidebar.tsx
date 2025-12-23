@@ -15,6 +15,7 @@ import {
   Headphones,
   Package,
   LogOut,
+  Settings,
 } from "lucide-react";
 
 export default function LayoutWithSidebar({
@@ -134,6 +135,16 @@ export default function LayoutWithSidebar({
               </div>
             )}
           </div>
+          {/* DASHBOARD */}
+          <Link
+            href="/Admin/settings"
+            className={`px-5 py-3 flex items-center gap-2 transition-colors ${
+              pathname === "/dashboard" ? "bg-orange-500" : "hover:bg-orange-400"
+            }`}
+          >
+            <Settings size={18} />
+            <span>Settings</span>
+          </Link>
         </nav>
       </aside>
 

@@ -9,7 +9,7 @@ export default function WhyLP() {
         {/* Judul */}
         <div className="text-center mb-10">
           <h2 className="text-3xl md:text-4xl font-bold">
-            Kenapa milih <span className="text-yellow-500">Digi Ars?</span>
+            Kenapa Memilih <span className="text-yellow-500">Digi Ars?</span>
           </h2>
           <p className="text-gray-400 mt-3 text-sm md:text-base">
             Karena DigiArs memiliki keunikan dan perbedaan sendiri jika

@@ -3,6 +3,7 @@
 import { useEffect, useState, ChangeEvent, FormEvent } from "react";
 import LayoutWithSidebar from "../dashboard/LayoutWithSidebar";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 
 interface LayananItem {
   id: number;
@@ -141,12 +142,21 @@ export default function DashboardPage() {
       {/* === HEADER === */}
       <div className="mb-4">
         <h1 className="text-4xl font-bold text-gray-800 mb-3">Layanan</h1>
+        <div className="flex gap-4">
         <button
           onClick={() => handleOpenForm()}
           className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition"
         >
           Tambah
         </button>
+        <Link href="/Admin/layanan/layananc">
+        <button
+          className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition"
+        >
+          Layanan Card
+        </button>
+        </Link>
+        </div>
       </div>
 
       {/* === TABLE === */}
