@@ -1,29 +1,48 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import HeroL from "./components/HeroL";
 import CardL from "./components/CardL";
 
-const services = [
-  { id: 1, title: "Videography", desc: "Abadikan momen bersama DigiArs", icon: "/images/videography.png", href: "/Costumer/detailvideography" },
-  { id: 2, title: "Fotography", desc: "Foto yang menarik hasil yang lebih baik", icon: "/images/fotographer.png", href: "/Costumer/detailfotography" },
-  { id: 3, title: "Animasi", desc: "Hasilkan karakter animasi yang bagus", icon: "/images/animasi.png", href: "/Costumer/delayanimasi" },
-  { id: 4, title: "Broadcast", desc: "Buat broadcast terbaikmu dengan kami", icon: "/images/broadcasting.png", href: "/Costumer/delaybroadcasting" },
-  { id: 5, title: "Game", desc: "Maksimalkan gamemu bersama DigiArs", icon: "/images/game.png", href: "/Costumer/detailgame" },
-  { id: 6, title: "Design", desc: "Rancang designmu bersama kami", icon: "/images/design.png", href: "/Costumer/delaydesign" },
-  { id: 7, title: "Sewa Barang", desc: "Menyediakan barang multimedia", icon: "/images/sewabarang.png", href: "/Costumer/detailsewa" },
-  { id: 8, title: "Sound Produksi", desc: "Sound produksi terbaik", icon: "/images/sound.png", href: "/Costumer/detailsound" },
-];
+interface LayananCard {
+  id: number;
+  judul: string;
+  foto: string;
+}
 
 export default function LayananPage() {
+  const [services, setServices] = useState<LayananCard[]>([]);
+
+  useEffect(() => {
+    fetch("http://localhost:8001/api/layananc")
+      .then((res) => res.json())
+      .then((data) => setServices(data))
+      .catch(console.error);
+  }, []);
+
   return (
     <div className="bg-[#0D0D0D] text-white min-h-screen">
       <HeroL />
+
       <section className="py-16 px-6 md:px-20">
-        <h2 className="text-center text-4xl font-semibold text-orange-500 mb-10">Layanan</h2>
+        <h2 className="text-center text-4xl font-semibold text-orange-500 mb-10">
+          Layanan
+        </h2>
+
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 justify-items-center">
           {services.map((service) => (
-            <CardL key={service.id} {...service} />
+            <CardL
+              key={service.id}
+              title={service.judul}
+              desc="Layanan profesional DigiArs"
+              icon={`http://localhost:8001/storage/layananc/${service.foto}`}
+              href={`/Costumer/layanan/${service.id}`}
+            />
           ))}
         </div>
       </section>
     </div>
   );
 }
+
+      

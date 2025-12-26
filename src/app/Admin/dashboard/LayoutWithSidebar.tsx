@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Home,
   Wrench,
@@ -32,16 +32,17 @@ export default function LayoutWithSidebar({
   );
 
   // === Daftar dropdown menu untuk Layanan ===
-  const layananMenu = [
-    { href: "/Admin/layanan/photography", label: "Photography", icon: <Camera size={16} /> },
-    { href: "/Admin/layanan/videography", label: "Videography", icon: <Video size={16} /> },
-    { href: "/Admin/layanan/design", label: "Design", icon: <Brush size={16} /> },
-    { href: "/Admin/layanan/animasi", label: "Animasi", icon: <Film size={16} /> },
-    { href: "/Admin/layanan/game", label: "Game", icon: <Gamepad2 size={16} /> },
-    { href: "/Admin/layanan/broadcasting", label: "Broadcasting", icon: <Radio size={16} /> },
-    { href: "/Admin/layanan/soundproduction", label: "Sound Production", icon: <Headphones size={16} /> },
-    { href: "/Admin/layanan/sewabarang", label: "Sewa Barang", icon: <Package size={16} /> },
-  ];
+ const [layananMenu, setLayananMenu] = useState<
+  { id: number; judul: string }[]
+>([]);
+
+useEffect(() => {
+  fetch("http://localhost:8001/api/layananc")
+    .then((res) => res.json())
+    .then((data) => setLayananMenu(data))
+    .catch(console.error);
+}, []);
+
 
   // === Fungsi Logout ===
   const handleLogout = () => {
@@ -119,18 +120,20 @@ export default function LayoutWithSidebar({
             {isDropdownOpen && (
               <div className="flex flex-col bg-teal-800 text-sm animate-fade-in">
                 {layananMenu.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`px-8 py-2 flex items-center gap-2 transition ${
-                      pathname === item.href
-                        ? "bg-teal-600 font-semibold"
-                        : "hover:bg-teal-600"
-                    }`}
-                  >
-                    {item.icon}
-                    {item.label}
-                  </Link>
+                <Link
+                  key={item.id}
+                  href={`/Admin/layanan/${item.judul
+                    .toLowerCase()
+                    .replace(/\s+/g, "")}`}
+                  className={`px-8 py-2 flex items-center gap-2 transition ${
+                    pathname === `/Admin/layanan/${item.judul.toLowerCase().replace(/\s+/g, "")}`
+                      ? "bg-teal-600 font-semibold"
+                      : "hover:bg-teal-600"
+                  }`}
+                >
+                  <Wrench size={14} />
+                  {item.judul}
+                </Link>
                 ))}
               </div>
             )}
