@@ -6,11 +6,13 @@ export default function AboutLP() {
         {/* Kolom Kiri */}
         <div className="space-y-4">
           <h2 className="text-2xl md:text-3xl font-semibold text-yellow-500">
-            Siapa DigiArs?
+            Tentang Kami
           </h2>
           <p className="text-gray-300 leading-relaxed">
-            Kami adalah Production House yang dikelola oleh Politeknik Negeri Batam
-            yang berisikan mahasiswa Jurusan Teknik Multimedia Rekayasa dan Animasi.
+            DigiArs Studio adalah rumah kreatif yang membantu mitra 
+            kami menviusalisasikan ide untuk berbagai kebutuhan
+            produk multimedia, mulai dari karya video, foto, desain,
+            animasi, hingga game dan simulator.
           </p>
         </div>
 
@@ -29,19 +31,13 @@ export default function AboutLP() {
         <div className="space-y-8">
           <div>
             <h3 className="text-xl font-semibold text-yellow-500 mb-2">
-              DigiArs ngapain aja?
+              Kenapa Kami?
             </h3>
             <p className="text-gray-300 leading-relaxed">
-              Kami melakukan jasa Video, Foto, Animasi, dan Sewa barang Multimedia.
-            </p>
-          </div>
-
-          <div>
-            <h3 className="text-xl font-semibold text-yellow-500 mb-2">
-              Kenapa harus DigiArs?
-            </h3>
-            <p className="text-gray-300 leading-relaxed">
-              Kreatifitas tanpa batas, layanan personal, dan hasil yang nyata.
+              Sepanjang lebih dari 10 tahun pengalaman, kami telah 
+              membantu ratusan mitra memvisualisasikan ide-ide mereka.
+              Izinkan kami membawa anda pada pengalaman berkarya 
+              yang terkurasi, dengan Anda sebagai prioritas utama kami.
             </p>
           </div>
         </div>

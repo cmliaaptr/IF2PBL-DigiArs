@@ -1,7 +1,9 @@
+import Link from "next/link";
+
 export default function Hero() {
     return (
         <section className="px-12 py-16 bg-neutral-950 text-white bg-cover bg-center h-130 "
-            style={{ backgroundImage: `url('/iya.png')` }}>
+            style={{ backgroundImage: `url('/bganimai.jpg')` }}>
 
             <div className="max-w-md space-y-4">
                 <h1 className="text-6xl font-bold font-serif">
@@ -10,9 +12,11 @@ export default function Hero() {
                 <p>
                     Dari motion graphic, explainer video, hingga animasi karakter - <br /> kami membuat ide Anda jadi nayata dengan visual yang memikat.
                 </p>
-                <button className="bg-green-500 text-black text-xl px-4 py-2 rounded-full font-medium hover:bg-green-400">
-                    Hubungi Kami
-                </button>
+                <Link href="/Costumer/contact">
+        <button className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-full font-medium transition">
+          Hubungi Kami
+        </button>
+        </Link>
             </div>
         </section>
     );

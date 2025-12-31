@@ -6,7 +6,7 @@ export default function HeroW() {
     <section
       className="relative w-full h-[90vh] flex items-center justify-start px-10 md:px-20 text-white"
       style={{
-        backgroundImage: "url('/images/bgherow.png')",
+        backgroundImage: "url('/images/bgworks.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}

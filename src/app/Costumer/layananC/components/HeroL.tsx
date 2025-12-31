@@ -18,9 +18,10 @@ export default function Hero() {
             Layanan DigiArs
         </h1>
         <p className="text-lg md:text-xl text-gray-200 leading-relaxed mb-8">
-          Kami menyediakan berbagai layanan mulai dari fotografi, videografi
-          dan lainnya, kami juga menyediakan layanan penyewaan barang dengan 
-          berbagai macam barang multimedia untuk memenuhi kebutuhan anda
+          Kami menyediakan pelayanan yang lengkap untuk berbagai kebutuhan kreatif anda. Mulai dari
+          karya dokumentasi videografi dan fotografi, desain grafis, animasi, game, hingga simulator.
+          Selain itu juga kami menyediakan fasilitas penyewaan peralatan Multimedia yang lengkap 
+          dengan spesifikasi sesuai standar industri kreatif.
 
         </p>
         <Link href="/Costumer/contact">

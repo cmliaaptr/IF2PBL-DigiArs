@@ -20,10 +20,10 @@ export default function Hero() {
             DigiArs
         </h1>
         <p className="text-lg md:text-xl text-gray-200 leading-relaxed">
-          Adalah production house kreatif yang didirikan oleh Politeknik Negeri Batam sebagai sarana pembelajaran 
-          berbasis proyek untuk mahasiswa jurusan Teknik Informatika (Prodi Multimedia Jaringan dan Prodi Animasi). 
-          Kami berfokus pada pembuatan kontek multimedia dan animasi sebagai wujud kolaborasi antara teknologi digital
-          dan seni.
+          Kami adalah rumah produksi kreatif yang berisikan para professional di bidangnya
+          masing-masing. Menjamin ide yang mitra kami miliki tervisualisasikan sesuai dengan apa yang
+          diimpikan. Dengan lebih dari 10 tahun pengalaman kami membantu para mitra untuk
+          merancang hingga mendokumentasikan berbagai kebutuhan kreatif yang dapat dipikirkan.
         </p>
       </div>
     </section>
