@@ -2,21 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import {
-  Home,
-  Wrench,
-  Camera,
-  Video,
-  Brush,
-  Film,
-  Gamepad2,
-  Radio,
-  Headphones,
-  Package,
-  LogOut,
-  Settings,
-} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Home, Wrench, LogOut, Settings } from "lucide-react";
+
+const BACKEND =
+  process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "") ||
+  "http://localhost:8001";
 
 export default function LayoutWithSidebar({
   children,
@@ -26,48 +17,89 @@ export default function LayoutWithSidebar({
   const pathname = usePathname();
   const router = useRouter();
 
-  // Dropdown terbuka jika berada di halaman layanan
+  // ✅ GUARD
+  useEffect(() => {
+    const isAuthPage = pathname === "/Admin/login";
+    if (isAuthPage) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) router.replace("/Admin/login");
+  }, [pathname, router]);
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(
-    pathname.startsWith("/layanan")
+    pathname.startsWith("/Admin/layanan")
   );
 
-  // === Daftar dropdown menu untuk Layanan ===
- const [layananMenu, setLayananMenu] = useState<
-  { id: number; judul: string }[]
->([]);
+  const [layananMenu, setLayananMenu] = useState<
+    { id: number; judul: string }[]
+  >([]);
 
-useEffect(() => {
-  fetch("http://localhost:8001/api/layananc")
-    .then((res) => res.json())
-    .then((data) => setLayananMenu(data))
-    .catch(console.error);
-}, []);
+  const fetchMenu = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
 
+      // kalau belum login, jangan fetch (biar ga spam 401)
+      if (!token) {
+        setLayananMenu([]);
+        return;
+      }
 
-  // === Fungsi Logout ===
+      const res = await fetch(`${BACKEND}/api/layananc`, {
+        cache: "no-store",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // kalau token invalid / expired
+      if (res.status === 401) {
+        setLayananMenu([]);
+        localStorage.removeItem("token");
+        router.replace("/Admin/login");
+        return;
+      }
+
+      const data = await res.json().catch(() => []);
+      setLayananMenu(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error(e);
+      setLayananMenu([]);
+    }
+  }, [router]);
+
+  // ✅ pertama kali load
+  useEffect(() => {
+    fetchMenu();
+  }, [fetchMenu]);
+
+  // ✅ setiap pindah halaman layanan, dropdown kebuka + menu refresh
+  useEffect(() => {
+    if (pathname.startsWith("/Admin/layanan")) {
+      setIsDropdownOpen(true);
+      fetchMenu();
+    }
+  }, [pathname, fetchMenu]);
+
   const handleLogout = () => {
     if (confirm("Apakah anda yakin ingin keluar?")) {
-      window.location.href = "/Admin/login";
+      localStorage.removeItem("token");
+      router.replace("/Admin/login");
     }
   };
 
-  // === Klik tombol utama "Layanan" ===
   const handleLayananClick = () => {
-    router.push("/Admin/layanan"); // langsung ke halaman layanan utama
-    setIsDropdownOpen(true); // tetap buka dropdown
+    router.push("/Admin/layanan");
+    setIsDropdownOpen(true);
   };
 
-  // === Klik panah (toggle dropdown saja, tanpa navigasi) ===
   const toggleDropdown = (e: React.MouseEvent) => {
-    e.stopPropagation(); // biar gak trigger handleLayananClick
-    setIsDropdownOpen(!isDropdownOpen);
+    e.stopPropagation();
+    setIsDropdownOpen((v) => !v);
   };
 
   return (
     <div className="flex min-h-screen font-poppins">
-      {/* === SIDEBAR === */}
       <aside className="w-64 bg-teal-700 text-white flex flex-col">
-        {/* LOGO */}
         <div className="p-6 border-b border-teal-600 flex justify-center">
           <img
             src="/logo-digiars.png"
@@ -76,36 +108,34 @@ useEffect(() => {
           />
         </div>
 
-        {/* === NAV MENU === */}
         <nav className="flex flex-col mt-4">
-          {/* DASHBOARD */}
           <Link
             href="/Admin/dashboard"
             className={`px-5 py-3 flex items-center gap-2 transition-colors ${
-              pathname === "/dashboard" ? "bg-orange-500" : "hover:bg-orange-400"
+              pathname === "/Admin/dashboard"
+                ? "bg-orange-500"
+                : "hover:bg-orange-400"
             }`}
           >
             <Home size={18} />
             <span>Dashboard</span>
           </Link>
 
-          {/* === LAYANAN + DROPDOWN === */}
           <div>
-            {/* Tombol utama layanan (klik untuk ke /layanan) */}
             <button
               onClick={handleLayananClick}
               className={`w-full px-5 py-3 flex justify-between items-center transition-colors ${
-                pathname.startsWith("/layanan")
+                pathname.startsWith("/Admin/layanan")
                   ? "bg-orange-500 text-white"
                   : "hover:bg-orange-400"
               }`}
+              type="button"
             >
               <span className="flex items-center gap-2">
                 <Wrench size={18} />
                 <span>Layanan</span>
               </span>
 
-              {/* Panah dropdown (hanya buka/tutup menu) */}
               <span
                 onClick={toggleDropdown}
                 className={`text-sm transform transition-transform duration-200 cursor-pointer ${
@@ -116,33 +146,40 @@ useEffect(() => {
               </span>
             </button>
 
-            {/* DROPDOWN MENU */}
             {isDropdownOpen && (
               <div className="flex flex-col bg-teal-800 text-sm animate-fade-in">
-                {layananMenu.map((item) => (
-                <Link
-                  key={item.id}
-                  href={`/Admin/layanan/${item.judul
-                    .toLowerCase()
-                    .replace(/\s+/g, "")}`}
-                  className={`px-8 py-2 flex items-center gap-2 transition ${
-                    pathname === `/Admin/layanan/${item.judul.toLowerCase().replace(/\s+/g, "")}`
-                      ? "bg-teal-600 font-semibold"
-                      : "hover:bg-teal-600"
-                  }`}
-                >
-                  <Wrench size={14} />
-                  {item.judul}
-                </Link>
-                ))}
+                {layananMenu.map((item) => {
+                  const href = `/Admin/layanan/${item.id}`;
+
+                  return (
+                    <Link
+                      key={item.id}
+                      href={href}
+                      className={`px-8 py-2 flex items-center gap-2 transition ${
+                        pathname === href
+                          ? "bg-teal-600 font-semibold"
+                          : "hover:bg-teal-600"
+                      }`}
+                    >
+                      <Wrench size={14} />
+                      {item.judul}
+                    </Link>
+                  );
+                })}
+
+                {layananMenu.length === 0 && (
+                  <div className="px-8 py-2 text-white/70">Belum ada layanan</div>
+                )}
               </div>
             )}
           </div>
-          {/* DASHBOARD */}
+
           <Link
             href="/Admin/settings"
             className={`px-5 py-3 flex items-center gap-2 transition-colors ${
-              pathname === "/dashboard" ? "bg-orange-500" : "hover:bg-orange-400"
+              pathname === "/Admin/settings"
+                ? "bg-orange-500"
+                : "hover:bg-orange-400"
             }`}
           >
             <Settings size={18} />
@@ -151,9 +188,7 @@ useEffect(() => {
         </nav>
       </aside>
 
-      {/* === MAIN CONTENT === */}
       <main className="flex-1 bg-white p-8 relative">
-        {/* 🔴 ICON LOGOUT di pojok kanan atas */}
         <div className="absolute top-10 right-6">
           <button
             onClick={handleLogout}
@@ -164,7 +199,6 @@ useEffect(() => {
           </button>
         </div>
 
-        {/* === KONTEN HALAMAN === */}
         {children}
       </main>
     </div>

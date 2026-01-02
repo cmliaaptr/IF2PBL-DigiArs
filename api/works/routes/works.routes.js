@@ -1,14 +1,16 @@
 const express = require("express");
 const router = express.Router();
-const auth = require("../../login/middlewares/auth");
+
+const auth = require("../../middlewares/auth");
 const worksController = require("../controllers/works.controller");
 const uploadWorks = require("../middlewares/uploadworks");
 
-// PUBLIC
-router.get("/", worksController.getAllWorks);
-router.get("/:id", worksController.getWorkById);
+router.get("/", worksController.getAllWorks);     
+router.get("/:id", worksController.getWorkById);  
 
-// ADMIN (WAJIB LOGIN)
+router.get("/admin/list", auth, worksController.getAllWorksAdmin);
+router.get("/admin/:id", auth, worksController.getWorkByIdAdmin);
+
 router.post(
   "/",
   auth,

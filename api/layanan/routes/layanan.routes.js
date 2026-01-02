@@ -1,13 +1,17 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const LayananController = require('../controllers/layanan.controller');
-const uploadLayanan = require('../middlewares/uploadlayanan');
 
-// Routing standar REST API
-router.get('/', LayananController.getAllLayanan); //get all
-router.get('/:id', LayananController.getLayananById); //get by id
-router.post('/', uploadLayanan.single("foto"), LayananController.createLayanan); //create
-router.put('/:id', uploadLayanan.single("foto"), LayananController.updateLayanan); //update
-router.delete('/:id', LayananController.deleteLayanan); //delete
+const LayananController = require("../controllers/layanan.controller");
+const uploadLayanan = require("../middlewares/uploadlayanan");
+const auth = require("../../middlewares/auth");
+
+router.get("/public", LayananController.getAllPublic);
+
+router.get("/", auth, LayananController.getAllLayanan);
+router.get("/:id", auth, LayananController.getLayananById);
+
+router.post("/", auth, uploadLayanan.single("foto"), LayananController.createLayanan);
+router.put("/:id", auth, uploadLayanan.single("foto"), LayananController.updateLayanan);
+router.delete("/:id", auth, LayananController.deleteLayanan);
 
 module.exports = router;

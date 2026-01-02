@@ -1,129 +1,176 @@
 const Layanan = require("../models/layanan.model");
 
-// GET all
+function getUserId(req) {
+  const id = req?.user?.id ? Number(req.user.id) : null;
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+function pickArray(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+}
+
+exports.getAllPublic = async (req, res) => {
+  try {
+    const results = await Layanan.getAllPublic();
+    res.json(results);
+  } catch (err) {
+    console.error("GET ALL PUBLIC LAYANAN ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 exports.getAllLayanan = async (req, res) => {
   try {
-    const results = await Layanan.getAll();
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    const fixed = results.map((l) => ({
-      ...l,
-      kategori: l.kategori && String(l.kategori).trim() !== "" ? l.kategori : "Photography",
-    }));
-
-    res.json(fixed);
+    const results = await Layanan.getAllByUserId(userId);
+    res.json(pickArray(results));
   } catch (err) {
-    console.error(err);
+    console.error("GET ALL LAYANAN ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// GET by ID
+
 exports.getLayananById = async (req, res) => {
   try {
-    const id = req.params.id;
-    const results = await Layanan.getById(id);
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    if (!results || results.length === 0) {
-      return res.status(404).json({ message: "Layanan not found" });
-    }
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ message: "ID tidak valid" });
 
-    res.json(results[0]);
+    const row = await Layanan.getByIdAndUserId(id, userId);
+    if (!row) return res.status(404).json({ message: "Layanan not found" });
+
+    res.json(row);
   } catch (err) {
-    console.error(err);
+    console.error("GET LAYANAN BY ID ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// CREATE
 exports.createLayanan = async (req, res) => {
   try {
-    const data = req.body;
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    // FOTO (single file)
-    data.foto = req.file ? req.file.filename : "";
+    const body = req.body || {};
 
-    // kategori: form > auto
-    let kategori = (data.kategori || "").toString().trim();
-    if (!kategori) {
-      if (data.link_video && String(data.link_video).trim() !== "") kategori = "Videography";
-      else kategori = "Photography";
+    const layanan1_id = Number(body.layanan1_id || 0);
+    if (!layanan1_id || layanan1_id <= 0) {
+      return res.status(400).json({ message: "Kategori wajib dipilih" });
     }
-    data.kategori = kategori;
 
-    const result = await Layanan.create(data);
+    const judul = String(body.judul || "").trim();
+    const deskripsi = String(body.deskripsi || "").trim();
+    const link_video = String(body.link_video || "").trim();
+
+    const foto = req.file?.filename || null;
+
+    if (!judul) return res.status(400).json({ message: "Judul wajib diisi" });
+
+    if (!foto && !link_video) {
+      return res
+        .status(400)
+        .json({ message: "Minimal upload foto atau isi link video" });
+    }
+
+    const payload = {
+      user_id: userId, 
+      layanan1_id,
+      foto,
+      link_video: link_video || null,
+      judul,
+      deskripsi: deskripsi || null,
+    };
+
+    const result = await Layanan.create(payload);
 
     res.status(201).json({
       message: "Layanan created",
       id: result.insertId,
-      ...data,
+      ...payload,
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.error("CREATE LAYANAN ERROR:", err);
+
+    return res.status(500).json({
+      message: "Server error",
+    });
   }
 };
 
-// UPDATE
 exports.updateLayanan = async (req, res) => {
   try {
-    const id = req.params.id;
-    const data = req.body;
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    const existing = await Layanan.getById(id);
-    if (!existing || existing.length === 0) {
-      return res.status(404).json({ message: "Layanan not found" });
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ message: "ID tidak valid" });
+
+    const existing = await Layanan.getByIdAndUserId(id, userId);
+    if (!existing) return res.status(404).json({ message: "Layanan not found" });
+
+    const body = req.body || {};
+
+    const layanan1_id = Number(body.layanan1_id ?? existing.layanan1_id ?? 0);
+    if (!layanan1_id || layanan1_id <= 0) {
+      return res.status(400).json({ message: "Kategori wajib dipilih" });
     }
 
-    const old = existing[0];
+    const judul = String(body.judul ?? existing.judul ?? "").trim();
+    const deskripsi = String(body.deskripsi ?? existing.deskripsi ?? "").trim();
+    const link_video = String(body.link_video ?? existing.link_video ?? "").trim();
 
-    // FOTO: file baru > lama
-    data.foto = req.file ? req.file.filename : old.foto || "";
+    const foto = req.file?.filename || existing.foto || null;
 
-    // kategori: form > lama > auto
-    let kategori =
-      (data.kategori || "").toString().trim() ||
-      (old.kategori || "").toString().trim();
+    if (!judul) return res.status(400).json({ message: "Judul wajib diisi" });
 
-    if (!kategori) {
-      if (data.link_video && String(data.link_video).trim() !== "") {
-        kategori = "Videography";
-      } else if (
-        (data.judul || old.judul || "").toLowerCase().includes("animasi") ||
-        (data.deskripsi || old.deskripsi || "").toLowerCase().includes("animasi")
-      ) {
-        kategori = "Animasi";
-      } else {
-        kategori = "Photography";
-      }
+    if (!deskripsi) {
+      return res.status(400).json({ message: "Deskripsi wajib diisi saat edit" });
     }
 
-    data.kategori = kategori;
+    const payload = {
+      layanan1_id,
+      foto,
+      link_video: link_video || null,
+      judul,
+      deskripsi,
+    };
 
-    const result = await Layanan.update(id, data);
+    const result = await Layanan.updateByIdAndUserId(id, userId, payload);
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Layanan not found" });
     }
 
-    res.json({ message: "Layanan updated", id, ...data });
+    res.json({ message: "Layanan updated", id, ...payload });
   } catch (err) {
-    console.error(err);
+    console.error("UPDATE LAYANAN ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// DELETE
+// DELETE (ADMIN) 
 exports.deleteLayanan = async (req, res) => {
   try {
-    const id = req.params.id;
-    const result = await Layanan.delete(id);
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ message: "ID tidak valid" });
+
+    const result = await Layanan.deleteByIdAndUserId(id, userId);
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Layanan not found" });
     }
 
     res.json({ message: "Layanan deleted", id });
   } catch (err) {
-    console.error(err);
+    console.error("DELETE LAYANAN ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

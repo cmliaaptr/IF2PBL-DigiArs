@@ -4,14 +4,13 @@ const User = require("../models/user.model");
 
 exports.login = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password } = req.body || {};
 
     const user = await User.findByUsername(username);
     if (!user) {
       return res.status(401).json({ message: "Username tidak ditemukan" });
     }
-
-    // 🔥 BANDINKAN LANGSUNG (PLAIN TEXT)
+    
     if (password !== user.password) {
       return res.status(401).json({ message: "Password salah" });
     }

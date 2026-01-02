@@ -8,6 +8,7 @@ type LayananApi = {
   id: number;
   foto?: string;
   link_video?: string;
+  kategori_nama?: string;
   kategori?: string;
   judul?: string;
   deskripsi?: string;
@@ -16,15 +17,15 @@ type LayananApi = {
 type LayananItem = {
   title: string;
   desc: string;
-  img: string;        // thumbnail (foto atau youtube thumb)
-  videoUrl?: string;  // link video asli (youtube/url)
+  img: string;
+  videoUrl?: string;
 };
 
 const BACKEND =
   process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "") ||
   "http://localhost:8001";
 
-const API_BASE = `${BACKEND}/api/layanan`;
+const API_BASE = `${BACKEND}/api/layanan/public`;
 const FILE_BASE = `${BACKEND}/storage/layanan/`;
 
 function pickArray(payload: any): any[] {
@@ -47,8 +48,19 @@ function resolveStorageUrl(file?: string): string {
 function getYoutubeId(url: string) {
   try {
     const u = new URL(url);
-    if (u.hostname.includes("youtu.be")) return u.pathname.slice(1);
-    if (u.hostname.includes("youtube.com")) return u.searchParams.get("v") || "";
+    const host = u.hostname.replace("www.", "");
+
+    if (host === "youtu.be") return u.pathname.split("/")[1] || "";
+
+    if (host.includes("youtube.com")) {
+      const v = u.searchParams.get("v");
+      if (v) return v;
+
+      const parts = u.pathname.split("/").filter(Boolean);
+      if (parts[0] === "shorts" && parts[1]) return parts[1];
+      if (parts[0] === "embed" && parts[1]) return parts[1];
+    }
+
     return "";
   } catch {
     return "";
@@ -62,23 +74,8 @@ function getYoutubeThumb(url?: string) {
 }
 
 function toYoutubeEmbedUrl(url: string) {
-  try {
-    const u = new URL(url);
-
-    if (u.hostname.includes("youtu.be")) {
-      const id = u.pathname.replace("/", "");
-      return id ? `https://www.youtube.com/embed/${id}` : url;
-    }
-
-    if (u.hostname.includes("youtube.com")) {
-      const id = u.searchParams.get("v");
-      return id ? `https://www.youtube.com/embed/${id}` : url;
-    }
-
-    return url;
-  } catch {
-    return url;
-  }
+  const id = getYoutubeId(url);
+  return id ? `https://www.youtube.com/embed/${id}` : url;
 }
 
 export default function LayananLP() {
@@ -88,16 +85,25 @@ export default function LayananLP() {
 
   const [layanan, setLayanan] = useState<LayananItem[]>([]);
   const [selected, setSelected] = useState<LayananItem | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch layanan
   useEffect(() => {
     const fetchLayanan = async () => {
+      setLoading(true);
       try {
         const res = await fetch(API_BASE, { cache: "no-store" });
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          console.error("FETCH LAYANAN FAILED:", res.status, text);
+          setLayanan([]);
+          return;
+        }
+
         const payload = await res.json();
         const arr = pickArray(payload) as LayananApi[];
 
-        const mapped: LayananItem[] = arr
+        const mapped: LayananItem[] = (arr || [])
           .map((x) => {
             const videoUrl =
               x.link_video && String(x.link_video).trim() !== ""
@@ -108,9 +114,12 @@ export default function LayananLP() {
             const thumb = videoUrl ? getYoutubeThumb(videoUrl) : "";
             const img = fotoUrl || thumb || "/works/default.jpg";
 
+            const kategori =
+              (x.kategori_nama || x.kategori || "").toString().trim();
+
             return {
-              title: x.judul || x.kategori || `Layanan ${x.id}`,
-              desc: x.deskripsi || "",
+              title: (x.judul || kategori || `Layanan ${x.id}`).toString(),
+              desc: (x.deskripsi || "").toString(),
               img,
               videoUrl,
             };
@@ -119,22 +128,29 @@ export default function LayananLP() {
 
         setLayanan(mapped);
       } catch (e) {
-        console.error(e);
+        console.error("FETCH ERROR:", e);
+        setLayanan([]);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchLayanan();
   }, []);
 
-  // Auto scroll (template kamu)
+  // Auto scroll
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
+    if (layanan.length === 0) return;
 
     const step = () => {
       if (isPausedRef.current) return;
+
       container.scrollLeft += 1;
-      if (container.scrollLeft + container.clientWidth >= container.scrollWidth) {
+
+      // reset ketika mendekati mentok kanan
+      if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 5) {
         container.scrollLeft = 0;
       }
     };
@@ -142,8 +158,12 @@ export default function LayananLP() {
     intervalRef.current = window.setInterval(step, 25);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = null;
     };
   }, [layanan.length]);
+
+  // ✅ tetap duplicate untuk looping, tapi yang duplikat disembunyikan
+  const cards = layanan.length > 0 ? [...layanan, ...layanan] : [];
 
   return (
     <section id="layanan" className="py-20 bg-[#141414] text-white">
@@ -156,67 +176,56 @@ export default function LayananLP() {
         </p>
       </div>
 
+      {loading && (
+        <div className="text-center text-gray-400 pb-6">Memuat layanan...</div>
+      )}
+
+      {!loading && layanan.length === 0 && (
+        <div className="text-center text-gray-400 pb-6">Belum ada layanan.</div>
+      )}
+
       <div
         ref={scrollRef}
         onMouseEnter={() => (isPausedRef.current = true)}
         onMouseLeave={() => (isPausedRef.current = false)}
         className="flex gap-6 overflow-x-auto px-6 py-4 scrollbar-hide"
       >
-        {layanan.map((item, idx) => (
-          <motion.div
-            key={idx}
-            onClick={() => setSelected(item)}
-            className="min-w-[100px] md:min-w-[280px] bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-lg flex-shrink-0 cursor-pointer hover:shadow-yellow-500/20 transition-all"
-            whileTap={{ scale: 1.05 }}
-            whileHover={{ scale: 1.03 }}
-          >
-            {/* Ukuran gambar sesuai template layanan */}
-            <img
-              src={item.img}
-              alt={item.title}
-              className="w-full h-48 md:h-52 object-cover brightness-90 hover:brightness-100 transition"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = "/works/default.jpg";
-              }}
-            />
+        {cards.map((item, idx) => {
+          const isDup = idx >= layanan.length;
 
-            {/* Depan: hanya judul */}
-            <div className="p-5 text-left">
-              <h3 className="text-xl font-semibold text-yellow-400">
-                {item.title}
-              </h3>
-            </div>
-          </motion.div>
-        ))}
-
-        {/* duplicate for smoother infinite loop (optional) */}
-        {layanan.map((item, idx) => (
-          <motion.div
-            key={`dup-${idx}`}
-            onClick={() => setSelected(item)}
-            className="min-w-[100px] md:min-w-[280px] bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-lg flex-shrink-0 cursor-pointer hover:shadow-yellow-500/20 transition-all"
-            whileTap={{ scale: 1.05 }}
-            whileHover={{ scale: 1.03 }}
-            aria-hidden
-          >
-            <img
-              src={item.img}
-              alt={item.title}
-              className="w-full h-48 md:h-52 object-cover brightness-90 hover:brightness-100 transition"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = "/works/default.jpg";
+          return (
+            <motion.div
+              key={idx}
+              onClick={() => {
+                if (!isDup) setSelected(item); // ✅ duplikat tidak bisa diklik
               }}
-            />
-            <div className="p-5 text-left">
-              <h3 className="text-xl font-semibold text-yellow-400">
-                {item.title}
-              </h3>
-            </div>
-          </motion.div>
-        ))}
+              className={`min-w-[240px] md:min-w-[280px] bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-lg flex-shrink-0 cursor-pointer hover:shadow-yellow-500/20 transition-all ${
+                isDup ? "opacity-0 pointer-events-none" : ""
+              }`}
+              whileTap={{ scale: 1.03 }}
+              whileHover={{ scale: 1.02 }}
+              aria-hidden={isDup}
+            >
+              <img
+                src={item.img}
+                alt={item.title}
+                className="w-full h-48 md:h-52 object-cover brightness-90 hover:brightness-100 transition"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "/works/default.jpg";
+                }}
+              />
+
+              <div className="p-5 text-left">
+                <h3 className="text-xl font-semibold text-yellow-400">
+                  {item.title}
+                </h3>
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
 
-      {/* Popup Modal: ukuran media harus SAMA (w-full h-48) */}
+      {/* Popup Modal */}
       <AnimatePresence>
         {selected && (
           <motion.div
@@ -227,60 +236,62 @@ export default function LayananLP() {
             onClick={() => setSelected(null)}
           >
             <motion.div
-              className="bg-[#1f1f1f] text-white rounded-2xl max-w-md w-[90%] p-6 relative shadow-lg"
-              initial={{ scale: 0.8, opacity: 0 }}
+              className="bg-[#1f1f1f] text-white rounded-2xl shadow-xl w-[95%] md:w-[1000px] max-h-[90vh] overflow-hidden"
+              initial={{ scale: 0.92, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
+              exit={{ scale: 0.92, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                className="absolute top-4 right-4 text-gray-400 hover:text-white"
-                onClick={() => setSelected(null)}
-              >
-                <X size={24} />
-              </button>
+              <div className="flex items-start justify-between gap-4 p-6 border-b border-gray-700/50">
+                <h3 className="text-2xl font-bold text-yellow-400">
+                  {selected.title}
+                </h3>
 
-              {/* MEDIA WRAPPER: SAMA utk image/video */}
-              <div className="rounded-lg mb-4 w-full h-48 overflow-hidden">
-                {selected.videoUrl &&
-                (selected.videoUrl.includes("youtube.com") ||
-                  selected.videoUrl.includes("youtu.be")) ? (
-                  <iframe
-                    src={toYoutubeEmbedUrl(selected.videoUrl)}
-                    title="Video Player"
-                    className="w-full h-full"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                ) : selected.videoUrl ? (
-                  <video
-                    src={selected.videoUrl}
-                    controls
-                    autoPlay
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <img
-                    src={selected.img}
-                    alt={selected.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src =
-                        "/works/default.jpg";
-                    }}
-                  />
-                )}
+                <button
+                  className="text-gray-400 hover:text-white"
+                  onClick={() => setSelected(null)}
+                  aria-label="Close"
+                >
+                  <X size={24} />
+                </button>
               </div>
 
-              <h3 className="text-2xl font-bold text-yellow-400 mb-3">
-                {selected.title}
-              </h3>
+              <div className="p-6 overflow-y-auto max-h-[calc(85vh-80px)]">
+                <div className="relative w-full h-[320px] md:h-[520px] bg-black overflow-hidden rounded-xl">
+                  {selected.videoUrl &&
+                  (selected.videoUrl.includes("youtube.com") ||
+                    selected.videoUrl.includes("youtu.be")) ? (
+                    <iframe
+                      src={toYoutubeEmbedUrl(selected.videoUrl)}
+                      title="Video Player"
+                      className="w-full h-full"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : selected.videoUrl ? (
+                    <video
+                      src={selected.videoUrl}
+                      controls
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={selected.img}
+                      alt={selected.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src =
+                          "/works/default.jpg";
+                      }}
+                    />
+                  )}
+                </div>
 
-              {/* Deskripsi hanya di popup */}
-              <p className="text-gray-300">
-                {selected.desc ? selected.desc : "Deskripsi belum tersedia."}
-              </p>
+                <p className="mt-5 text-gray-300 whitespace-pre-line leading-relaxed">
+                  {selected.desc ? selected.desc : "Deskripsi belum tersedia."}
+                </p>
+              </div>
             </motion.div>
           </motion.div>
         )}
