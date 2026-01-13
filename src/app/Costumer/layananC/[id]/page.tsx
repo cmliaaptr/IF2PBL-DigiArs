@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import WhyL from "../components/WhyL";
 
 const BACKEND =
   process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "") ||
@@ -234,6 +235,10 @@ export default function DetailLayanancUserPage() {
         desc={selectedDesc?.deskripsi || ""}
         onClose={() => setSelectedDesc(null)}
       />
+
+      {/* Why Digi Ars Creative */}
+      <WhyL />
     </div>
+    
   );
 }
